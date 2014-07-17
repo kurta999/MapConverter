@@ -14,8 +14,8 @@ public:
 	static void	UnregisterAMX(AMX *pAMX);
 		
 	// Callbacks
-	static void OnConvertationStart(char *szFilename, EMapType eMapType, EConvertingFlags flags);
-	static void OnConvertationFinish(char *szFilename, EMapType eMapType, EConvertingFlags flags, int objects, int removeobjects, int vehicles, int checkpoints, int pickups);
+	static void OnConversionStart(char *szFilename, EMapType eMapType, EConvertingFlags flags);
+	static void OnConversionFinish(char *szFilename, EMapType eMapType, EConvertingFlags flags, int objects, int removeobjects, int vehicles, int checkpoints, int pickups);
 
 	static void	OnObjectDataConverted(object_t object);
 	static void	OnRemoveObjectDataConverted(removeobject_t object);

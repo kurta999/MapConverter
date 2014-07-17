@@ -123,7 +123,7 @@ bool CConverter::ConvertMTAMapToSAMP(char *szPath, EConvertingFlags flags)
 	hFind = FindFirstFile(szDir, &ffd);
 	do
 	{
-		// If lenght is too small - skip
+		// If lenght is too short - skip
 		if((len = strlen(ffd.cFileName)) < 4) 
 			continue;
 
@@ -133,60 +133,10 @@ bool CConverter::ConvertMTAMapToSAMP(char *szPath, EConvertingFlags flags)
 		vehicle_t vehicle;
 		marker_t marker;
 		pickup_t pickup;
-		/*
-		// TODO - currently rotations are bad in some situations
-		// 17512, LODgwforum1_LAe, 0, 2737.75, -1760.0625, 26.2265625, 0, 0, -8.742277657e-008, 1, -1
-		if(ffd.cFileName[len - 4] == '.' && ffd.cFileName[len - 3] == 'i' && ffd.cFileName[len - 2] == 'p' && ffd.cFileName[len - 1] == 'l')
-		{
-			//logprintf("tefasz");
-			std::ifstream t;
-			char szPath2[MAX_PATH];
-			sprintf(szPath2, "%s\\MTA\\%s", szPath, ffd.cFileName);
-			logprintf(szPath2);
 
-			t.open(szPath2);
-			std::string buffer;
-			std::string line;
-			while(t)
-			{
-				std::getline(t, line);
-				int modelid;
-				char szName[64];
-				int interior;
-				CVector vecPos;
-				quat_t quat;
-				int lod;
-				//logprintf((char*)line.c_str());
-				if(sscanf(line.c_str(), "%d, %s %d, %f, %f, %f, %lf, %lf, %lf, %lf, %d", &modelid, &szName, &interior, &vecPos.fX, &vecPos.fY, &vecPos.fZ, 
-					&quat.x, &quat.y, &quat.z, &quat.w, &lod))
-				{
-					logprintf("%d, %s %d, %f, %f, %f, %lf, %lf, %lf, %lf, %d", modelid, szName, interior, vecPos.fX, vecPos.fY, vecPos.fZ, 
-					quat.w, quat.x, quat.y, quat.z, lod);
-
-					double rotX, rotY, rotZ;
-					QuatToEuler(&quat, &rotX, &rotY, &rotZ);
-
-					object.usModelID = modelid;
-					object.vecPos = vecPos;
-					object.vecRot.fX = (float)clampAngle(static_cast<int>(rotX));
-					object.vecRot.fY = (float)clampAngle(static_cast<int>(rotY));
-					object.vecRot.fZ = (float)clampAngle(static_cast<int>(rotZ));
-					object.ucInterior = interior;
-					object.iWorld = 0;
-					object.ucAlpha = 0xFF;
-
-					m_vectorObjects.push_back(object);
-				}
-			}
-			t.close();
-		}
-		*/
 		// if file type is not "map", then continue
 		if(ffd.cFileName[len - 4] != '.' || ffd.cFileName[len - 3] != 'm' || ffd.cFileName[len - 2] != 'a' || ffd.cFileName[len - 1] != 'p')
 			continue;
-
-		//logprintf("megvan bazmeg");
-		// Parse XML file
 
 		char szPath2[MAX_PATH];
 		sprintf(szPath2, "%s\\MTA\\%s", szPath, ffd.cFileName);
@@ -199,7 +149,7 @@ bool CConverter::ConvertMTAMapToSAMP(char *szPath, EConvertingFlags flags)
 		if(doc.child("map").attribute("edf:definitions").value()[0])
 		{
 			m_eMapType = MTA_DM;
-			CCallbackManager::OnConvertationStart(m_szWorkingFilename, m_eMapType, flags);
+			CCallbackManager::OnConversionStart(m_szWorkingFilename, m_eMapType, flags);
 
 			tools = doc.child("map");
 			for (pugi::xml_node_iterator it = tools.begin(); it != tools.end(); ++it)
@@ -377,7 +327,7 @@ bool CConverter::ConvertMTAMapToSAMP(char *szPath, EConvertingFlags flags)
 		else
 		{
 			m_eMapType = MTA_RACE;
-			CCallbackManager::OnConvertationStart(m_szWorkingFilename, m_eMapType, flags);
+			CCallbackManager::OnConversionStart(m_szWorkingFilename, m_eMapType, flags);
 			
 			tools = doc.child("map");
 			for (pugi::xml_node_iterator it = tools.begin(); it != tools.end(); ++it)
@@ -679,7 +629,7 @@ bool CConverter::ConvertMTAMapToSAMP(char *szPath, EConvertingFlags flags)
 		}	
 
 		//logprintf("Converter stats:");
-		CCallbackManager::OnConvertationFinish(m_szWorkingFilename, m_eMapType, flags, m_vectorObjects.size(), m_vectorRemoveObjects.size(), m_vectorVehicles.size(),
+		CCallbackManager::OnConversionFinish(m_szWorkingFilename, m_eMapType, flags, m_vectorObjects.size(), m_vectorRemoveObjects.size(), m_vectorVehicles.size(),
 			m_vectorMarkers.size(), m_vectorPickups.size());
 
 		logprintf("-> %s.map", ffd.cFileName);

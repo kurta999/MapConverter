@@ -17,13 +17,13 @@ void CCallbackManager::UnregisterAMX(AMX *pAMX)
 	m_listAMX.remove(pAMX);
 }
 
-void CCallbackManager::OnConvertationStart(char *szFilename, EMapType eMapType, EConvertingFlags flags)
+void CCallbackManager::OnConversionStart(char *szFilename, EMapType eMapType, EConvertingFlags flags)
 {
 	for(std::list<AMX *>::iterator i = m_listAMX.begin(); i != m_listAMX.end(); i++)
 	{
 		// Get the function index
 		int iIndex;
-		if(!amx_FindPublic((*i), "OnConvertationStart", &iIndex))
+		if(!amx_FindPublic((*i), "OnConversionStart", &iIndex))
 		{
 			cell addr;
 
@@ -39,13 +39,13 @@ void CCallbackManager::OnConvertationStart(char *szFilename, EMapType eMapType, 
 	}
 }
 
-void CCallbackManager::OnConvertationFinish(char *szFilename, EMapType eMapType, EConvertingFlags flags, int objects, int removeobjects, int vehicles, int checkpoints, int pickups)
+void CCallbackManager::OnConversionFinish(char *szFilename, EMapType eMapType, EConvertingFlags flags, int objects, int removeobjects, int vehicles, int checkpoints, int pickups)
 {
 	for(std::list<AMX *>::iterator i = m_listAMX.begin(); i != m_listAMX.end(); i++)
 	{
 		// Get the function index
 		int iIndex;
-		if(!amx_FindPublic((*i), "OnConvertationFinish", &iIndex))
+		if(!amx_FindPublic((*i), "OnConversionFinish", &iIndex))
 		{
 			cell addr;
 
