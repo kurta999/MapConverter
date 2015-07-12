@@ -2,11 +2,9 @@
 #define CCALLBACKMANAGER_H
 
 #include <list>
-#include "CVector.h"
-#include "CStructs.h"
+#include "CConverter.h"
 #include "SDK/plugin.h"
 
-enum EConvertingFlags;
 class CCallbackManager
 {
 public:
@@ -14,14 +12,19 @@ public:
 	static void	UnregisterAMX(AMX *pAMX);
 		
 	// Callbacks
-	static void OnConversionStart(char *szFilename, EMapType eMapType, EConvertingFlags flags);
-	static void OnConversionFinish(char *szFilename, EMapType eMapType, EConvertingFlags flags, int objects, int removeobjects, int vehicles, int checkpoints, int pickups);
+	static void OnMapLoadingStart(int mapid, CMap *pMap, bool callPawnFunctions);
+	static void OnMapLoadingFinish(int mapid, CMap *pMap, bool callPawnFunctions, int objects, int removeobjects, int vehicles, int checkpoints, int pickups);
 
-	static void	OnObjectDataConverted(object_t object);
-	static void	OnRemoveObjectDataConverted(removeobject_t object);
-	static void	OnVehicleDataConverted(vehicle_t vehicle);
-	static void	OnCheckpointDataConverted(marker_t vehicle);
-	static void	OnPickupDataConverted(pickup_t vehicle);
+	static int	OnObjectDataLoaded(int mapid, object_t *object);
+	static void	OnObjectDataUnLoaded(int mapid, int extraid);
+	static int	OnRemoveObjectDataLoaded(int mapid, removeobject_t *object);
+	static void	OnRemoveObjectDataUnLoaded(int mapid, int extraid);
+	static int	OnVehicleDataLoaded(int mapid, vehicle_t *vehicle);
+	static void	OnVehicleDataUnLoaded(int mapid, int extraid);
+	static int	OnCheckpointDataLoaded(int mapid, marker_t *vehicle);
+	static void	OnCheckpointDataUnLoaded(int mapid, int extraid);
+	static int	OnPickupDataLoaded(int mapid, pickup_t *vehicle);
+	static void	OnPickupDataUnLoaded(int mapid, int extraid);
 	
 	static std::list<AMX *>		m_listAMX;
 };

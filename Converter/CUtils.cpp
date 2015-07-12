@@ -1,17 +1,8 @@
-#include "stdafx.h"
-
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned long ulong;
-typedef unsigned int uint;
-
-#ifndef NUMELMS     // from DShow.h
-    #define NUMELMS(aa) (sizeof(aa)/sizeof((aa)[0]))
-#endif
+#include "main.h"
 
 namespace
 {
-    static const uchar paletteColorTable8[] = {
+    static const BYTE paletteColorTable8[] = {
                 0x00, 0x00, 0x00, 0xff, 0xf5, 0xf5, 0xf5, 0xff, 0x2a, 0x77, 0xa1, 0xff, 0x84, 0x04, 0x10, 0xff,
                 0x26, 0x37, 0x39, 0xff, 0x86, 0x44, 0x6e, 0xff, 0xd7, 0x8e, 0x10, 0xff, 0x4c, 0x75, 0xb7, 0xff,
                 0xbd, 0xbe, 0xc6, 0xff, 0x5e, 0x70, 0x72, 0xff, 0x46, 0x59, 0x7a, 0xff, 0x65, 0x6a, 0x79, 0xff,
@@ -102,16 +93,16 @@ namespace
 }
 
 // MTA - thx
-uchar CUtils::GetPaletteIndexFromRGB ( uchar from_r, uchar from_g, uchar from_b )
+BYTE CUtils::GetPaletteIndexFromRGB ( BYTE from_r, BYTE from_g, BYTE from_b )
 {
-    ulong ulBestDist = 0xFFFFFFFF;
-    uchar ucBestMatch = 0;
-    for ( uint i = 0 ; i < NUMELMS( paletteColorTable8 ) / 4 ; i++ )
+    unsigned long ulBestDist = 0xFFFFFFFF;
+    BYTE ucBestMatch = 0;
+    for ( unsigned int i = 0 ; i < NUMELMS( paletteColorTable8 ) / 4 ; i++ )
     {
         int r = paletteColorTable8[ i * 4 + 0 ] - from_r;
         int g = paletteColorTable8[ i * 4 + 1 ] - from_g;
         int b = paletteColorTable8[ i * 4 + 2 ] - from_b;
-        ulong ulDist = r * r + g * g + b * b;
+        unsigned long ulDist = r * r + g * g + b * b;
         if ( ulDist < ulBestDist )
         {
             ulBestDist = ulDist;
@@ -128,19 +119,19 @@ float CUtils::RadToDeg(float radians)
 	{
 		return 0.0;
 	}
-	float retval = (360.0 + (radians / 0.0174532925));
-	while (retval >= 360.0) retval -= 360.0;
-	while (retval < 0.0) retval += 360.0;
+	float retval = (360.0f + (radians / 0.0174532925f));
+	while (retval >= 360.0f) retval -= 360.0f;
+	while (retval < 0.0f) retval += 360.0f;
 	return retval;
 }
-short CUtils::GetPickupModelIDFromWeaponID(uchar weaponid)
+short CUtils::GetPickupModelIDFromWeaponID(BYTE weaponid)
 {
 	if(weaponid < 0 || weaponid > 63) return 0;
 
 	return gh_objectIds[weaponid];
 }
 
-const char* CUtils::GetWeaponName(uchar iWeaponID)
+const char* CUtils::GetWeaponName(BYTE iWeaponID)
 {
 	switch(iWeaponID) { 
       case WEAPON_BRASSKNUCKLE: 
@@ -232,4 +223,14 @@ const char* CUtils::GetWeaponName(uchar iWeaponID)
 	}
 
 	return "";
+}
+
+int set_amxstring(AMX *amx, cell amx_addr, const char *source, int max)
+{
+	cell* dest = (cell *)(amx->base + (int)(((AMX_HEADER *)amx->base)->dat + amx_addr));
+	cell* start = dest;
+	while (max--&&*source)
+		*dest++ = (cell)*source++;
+	*dest = 0;
+	return dest - start;
 }
