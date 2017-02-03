@@ -1,7 +1,7 @@
 #ifndef CCALLBACKMANAGER_H
 #define CCALLBACKMANAGER_H
 
-#include <list>
+#include <set>
 #include "CConverter.h"
 #include "SDK/plugin.h"
 
@@ -26,6 +26,6 @@ public:
 	static int	OnPickupDataLoaded(int mapid, pickup_t *vehicle);
 	static void	OnPickupDataUnLoaded(int mapid, int extraid);
 	
-	static std::list<AMX *>		m_listAMX;
+	static std::set<AMX *>		m_listAMX;
 };
 #endif

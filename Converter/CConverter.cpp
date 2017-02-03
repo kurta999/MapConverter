@@ -1,11 +1,20 @@
 #include "main.h"
+#include <thread>
 
 extern logprintf_t logprintf;
 extern CConverter *pConverter;
 
+void StartPawnCompiler(std::string str);
+
 CConverter::CConverter()
 {
 	mapUpperID = 1;
+
+#ifdef _WIN32
+	CreateDirectory("\\scriptfiles\\maps", NULL);
+	CreateDirectory("\\scriptfiles\\maps\\SAMP", NULL);
+	CreateDirectory("\\scriptfiles\\maps\\MTA", NULL);
+#endif
 }
 
 CConverter::~CConverter()
@@ -77,57 +86,7 @@ int clampAngle(int angle)
 	return (angle % 360) + (angle < 0 ? 360 : 0);
 }
 
-int CConverter::LoadAllMTAMap(bool callPawnFunctions)
-{
-	//logprintf("szPath: %s, flags: %d", szPath, flags & HIDE_WHEN_ALPHA_NOT_255);
-	// XML parser objects
-	pugi::xml_document doc;
-    pugi::xml_parse_result result;
-	pugi::xml_node tools;
-
-	// Make path
-	char szDir[MAX_PATH];
-	size_t len;
-#ifdef _WIN32
-	sprintf(szDir, "scriptfiles\\maps\\MTA\\*.*");
-
-	// Check each file in given directory
-	WIN32_FIND_DATA ffd;
-	HANDLE hFind = INVALID_HANDLE_VALUE;
-	hFind = FindFirstFile(szDir, &ffd);
-	do
-	{
-		// If lenght is too short - skip
-		if((len = strlen(ffd.cFileName)) < 4) 
-			continue;
-
-		// if file type is not "map", then continue
-		if(ffd.cFileName[len - 4] != '.' || ffd.cFileName[len - 3] != 'm' || ffd.cFileName[len - 2] != 'a' || ffd.cFileName[len - 1] != 'p')
-			continue;
-
-		LoadMTAMap(std::string(ffd.cFileName), callPawnFunctions);
-	}
-	while (FindNextFile(hFind, &ffd) != 0);
-#else
-	DIR           *d;
-	struct dirent *dir;
-	sprintf(szDir, ".\\scriptfiles\\maps\\MTA\\*.*");
-	d = opendir(szDir);
-	if (d)
-	{
-		while ((dir = readdir(d)) != NULL)
-		{
-			printf("%s\n", dir->d_name);
-		}
-    }
-
-	closedir(d);
- }
-#endif
-	return 1;
-}
-
-int CConverter::LoadMTAMap(std::string strName, bool callPawnFunctions)
+int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 {	
 	// XML parser objects
 	pugi::xml_document doc;
@@ -142,20 +101,18 @@ int CConverter::LoadMTAMap(std::string strName, bool callPawnFunctions)
 	size_t pos = strName.find_last_of(".");
 	if(pos != std::string::npos)
 	{
-		std::string ext = strName.substr(pos + 1);
-		if(ext == "map")
+		if(strName.substr(pos + 1) == "map")
 		{
 			strName.erase(pos, 4);
 		}
-
 	}
 	
 	// If map isn't loaded
 	if(mapNames.find(strName) == mapNames.end())
 	{
-		pMap = new CMap(strName);		
-		maps.insert(std::make_pair(mapUpperID, pMap));
-		mapNames.insert(std::make_pair(strName, mapUpperID));
+		pMap = new CMap(strName);	
+		maps.emplace(mapUpperID, pMap);
+		mapNames.emplace(strName, mapUpperID);
 
 		id = mapUpperID++;
 	}
@@ -293,7 +250,7 @@ int CConverter::LoadMTAMap(std::string strName, bool callPawnFunctions)
 					else
 					{
 						vehicle->iColor1 = -1;
-						vehicle->iColor1 = -1;
+						vehicle->iColor2 = -1;
 					}
 
 					if(it->attribute("paintjob")) 
@@ -480,13 +437,13 @@ int CConverter::LoadMTAMap(std::string strName, bool callPawnFunctions)
 		}
 
 		CCallbackManager::OnMapLoadingFinish(id, pMap, callPawnFunctions, pMap->vectorObjects.size(), pMap->vectorRemoveObjects.size(), pMap->vectorVehicles.size(), pMap->vectorMarkers.size(), pMap->vectorPickups.size());
-		return true;
+		return id;
 	}
-	return false;
+	return id;
 }
 
 // TODO - Fix rotations
-int CConverter::LoadIPL(std::string strName, bool callPawnFunctions)
+int CConverter::LoadIPL(std::string &strName, bool callPawnFunctions)
 {
 	// 17512, LODgwforum1_LAe, 0, 2737.75, -1760.0625, 26.2265625, 0, 0, -8.742277657e-008, 1, -1
 	// Map object
@@ -507,8 +464,8 @@ int CConverter::LoadIPL(std::string strName, bool callPawnFunctions)
 	if(mapNames.find(strName) == mapNames.end())
 	{
 		pMap = new CMap(strName);		
-		maps.insert(std::make_pair(mapUpperID, pMap));
-		mapNames.insert(std::make_pair(strName, mapUpperID));
+		maps.emplace(mapUpperID, pMap);
+		mapNames.emplace(strName, mapUpperID);
 
 		id = mapUpperID++;
 	}
@@ -571,8 +528,7 @@ int CConverter::LoadIPL(std::string strName, bool callPawnFunctions)
 
 bool CConverter::IsValidMTAMap(int mapID)
 {
-	std::unordered_map<int, CMap*>::iterator map = maps.find(mapID);
-	return map != maps.end();
+	return maps.find(mapID) != maps.end();
 }
 
 bool CConverter::UnLoadMTAMap(int mapID, bool callPawnFunctions)
@@ -639,26 +595,36 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		return false;
 
 	char szDir[MAX_PATH];
-	sprintf(szDir, "scriptfiles\\SAMP\\%s.pwn", map->second->mapName.c_str());
+	sprintf(szDir, "scriptfiles\\maps\\SAMP\\%s.pwn", map->second->mapName.c_str());
 	logprintf("after strdel: %s", szDir);
 	
 	FILE *pfOut = fopen(szDir, "w");
 	char szLine[256];
 	char szHelp[32];
 
-	fputs("/*--------------------------------------------------Objects -------------------------------------------------*/\n", pfOut);
+	logprintf("after fopen");
+	fputs("#include <a_samp>\n#include <streamer>\n\npublic OnFilterScriptInit()\n{", pfOut);
+	
+	// Add "tempvehid" variable is there are vehicles present
+	if (!map->second->vectorVehicles.empty())
+	{
+		fputs("\n\tnew tempvehid; \n\n", pfOut);
+	}
+
 	/////////////////////////////////////////////////
 	// Write all objects into the file
+	if(!map->second->vectorObjects.empty())
 	{
+		fputs("\t/*--------------------------------------------------Objects -------------------------------------------------*/\n", pfOut);
 		for(auto o : map->second->vectorObjects)
 		{
 			if((flags & HIDE_WHEN_ALPHA_NOT_255) && o->ucAlpha != 0xFF)
 			{
-				strcpy(szLine, "SetDynamicObjectMaterial(CreateDynamicObject(");
+				strcpy(szLine, "\tSetDynamicObjectMaterial(CreateDynamicObject(");
 			}
 			else
 			{
-				strcpy(szLine, "CreateDynamicObject(");
+				strcpy(szLine, "\tCreateDynamicObject(");
 			}
 
 			sprintf(szLine, "%s%d, %f, %f, %f, %f, %f, %f", szLine, o->usModelID, o->vecPos.fX, o->vecPos.fY, o->vecPos.fZ,
@@ -695,73 +661,86 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		}
 	}
 
-	fputs("\n/*--------------------------------------------------Remove Objects -------------------------------------------------*/\n", pfOut);
 	/////////////////////////////////////////////////
 	// Write all remove objects into the file
+	if (!map->second->vectorRemoveObjects.empty())
 	{
+		fputs("\n/*--------------------------------------------------Remove Objects -------------------------------------------------*/\n", pfOut);
 		for(auto r : map->second->vectorRemoveObjects)
 		{
-			sprintf(szLine, "RemoveBuildingForPlayer(playerid, %d, %f, %f, %f, %f);\n", r->usModelID, r->vecPos.fX, r->vecPos.fY, r->vecPos.fZ, r->fRadius);
+			sprintf(szLine, "\tRemoveBuildingForPlayer(playerid, %d, %f, %f, %f, %f);\n", r->usModelID, r->vecPos.fX, r->vecPos.fY, r->vecPos.fZ, r->fRadius);
 			fputs(szLine, pfOut);
 				
 		}
 	}
-	fputs("\n/*--------------------------------------------------Vehicles -------------------------------------------------*/\n", pfOut);
 	/////////////////////////////////////////////////
 	// Write all vehicles into the file
+	if (!map->second->vectorVehicles.empty())
 	{
+		fputs("\t\n/*--------------------------------------------------Vehicles -------------------------------------------------*/\n", pfOut);
 		for(auto v : map->second->vectorVehicles)
 		{
 			if(flags & ONLY_CREATE_VEHICLE || (!v->ucInterior && !v->iWorld && v->ucPaintjob > 2 && !v->iUpgrades[0]))
 			{
-				sprintf(szLine, "CreateVehicle(%d, %f, %f, %f, %f, %d, %d, %d);", v->usModelID, v->vecPos.fX, v->vecPos.fY, v->vecPos.fZ,
-					v->fAngle, v->iColor1, v->iColor2, -1);
+				sprintf(szLine, "\tCreateVehicle(%d, %f, %f, %f, %f, %d, %d, -1);", v->usModelID, v->vecPos.fX, v->vecPos.fY, v->vecPos.fZ,
+					v->fAngle, v->iColor1, v->iColor2);
 				strcat(szLine, GetCommect(v->szName, flags));
 				fputs(szLine, pfOut);
 			}
 			else
 			{
-				sprintf(szLine, "vid = CreateVehicle(%d, %f, %f, %f, %f, %d, %d, %d);\n", v->usModelID, v->vecPos.fX, v->vecPos.fY, v->vecPos.fZ,
-					v->fAngle, v->iColor1, v->iColor2, -1);
+				sprintf(szLine, "\ttempvehid = CreateVehicle(%d, %f, %f, %f, %f, %d, %d, -1);\n", v->usModelID, v->vecPos.fX, v->vecPos.fY, v->vecPos.fZ,
+					v->fAngle, v->iColor1, v->iColor2);
 				fputs(szLine, pfOut);
 
 				if(flags & SAVE_NUMBER_PLATE)
 				{
-					sprintf(szLine, "SetVehicleNumberPlate(vid, \"%s\");\n", v->szPlate);
+					sprintf(szLine, "\tSetVehicleNumberPlate(tempvehid, \"%s\");\n", v->szPlate);
 					fputs(szLine, pfOut);
 				}
 
 				if(v->ucInterior)
 				{
-					sprintf(szLine, "LinkVehicleToInterior(vid, %d);\n", v->ucInterior);
+					sprintf(szLine, "\tLinkVehicleToInterior(tempvehid, %d);\n", v->ucInterior);
 					fputs(szLine, pfOut);					
 				}
 					
 				if(v->iWorld)
 				{
-					sprintf(szLine, "SetVehicleVirtualWorld(vid, %d);\n", v->iWorld);
+					sprintf(szLine, "\tSetVehicleVirtualWorld(tempvehid, %d);\n", v->iWorld);
 					fputs(szLine, pfOut);					
 				}
 
 				if(v->ucPaintjob < 3)
 				{
-					sprintf(szLine, "ChangeVehiclePaintjob(vid, %d);\n", v->ucPaintjob);
+					sprintf(szLine, "\tChangeVehiclePaintjob(tempvehid, %d);\n", v->ucPaintjob);
 					fputs(szLine, pfOut);					
 				}
 
-				for(BYTE i = 0; i != 14; i++)
+				if (v->iUpgrades[0])
 				{
-					if(!v->iUpgrades[i]) continue;
-					sprintf(szLine, "AddVehicleComponent(vid, %d);\n", v->iUpgrades[i]);
+					sprintf(szLine, "\tAddVehicleComponentInline(tempvehid, ");
 					fputs(szLine, pfOut);
+					for (BYTE i = 0; i != 14; i++)
+					{
+						if (i == 13)
+							sprintf(szLine, "%d);", v->iUpgrades[i]);
+						else
+							sprintf(szLine, "%d, ", v->iUpgrades[i]);
+						
+						fputs(szLine, pfOut);
+					}
 				}
+
 			}
 		}
 	}
-	fputs("\n/*--------------------------------------------------Checkpoints -------------------------------------------------*/\n", pfOut);
+
 	/////////////////////////////////////////////////
 	// Write all markers into the file
+	if (!map->second->vectorMarkers.empty())
 	{
+		fputs("\t\n/*--------------------------------------------------Checkpoints -------------------------------------------------*/\n", pfOut);
 		for(auto m : map->second->vectorMarkers)
 		{
 			// // "arrow", "checkpoint", "corona", "cylinder", "ring"
@@ -776,7 +755,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 				// checkpoint
 				case 'h': 
 				{
-					sprintf(szLine, "CreateDynamicCP(%.4f, %.4f, %.4f, %.4f", m->vecPos.fX, m->vecPos.fY, m->vecPos.fZ, m->fSize);
+					sprintf(szLine, "\tCreateDynamicCP(%.4f, %.4f, %.4f, %.4f", m->vecPos.fX, m->vecPos.fY, m->vecPos.fZ, m->fSize);
 					break;
 				}
 
@@ -789,14 +768,14 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 				// cylinder (default CP)
 				case 'y':
 				{
-					sprintf(szLine, "CreateDynamicRaceCP(2, %.4f, %.4f, %.4f, 0.0, 0.0, 0.0, %.4f", m->vecPos.fX, m->vecPos.fY, m->vecPos.fZ, m->fSize);
+					sprintf(szLine, "\tCreateDynamicRaceCP(2, %.4f, %.4f, %.4f, 0.0, 0.0, 0.0, %.4f", m->vecPos.fX, m->vecPos.fY, m->vecPos.fZ, m->fSize);
 					break;
 				}
 
 				// ring
 				case 'i':
 				{
-					sprintf(szLine, "CreateDynamicRaceCP(4, %.4f, %.4f, %.4f, 0.0, 0.0, 0.0, %.4f", m->vecPos.fX, m->vecPos.fY, m->vecPos.fZ, m->fSize);
+					sprintf(szLine, "\tCreateDynamicRaceCP(4, %.4f, %.4f, %.4f, 0.0, 0.0, 0.0, %.4f", m->vecPos.fX, m->vecPos.fY, m->vecPos.fZ, m->fSize);
 					break;
 				}
 			}
@@ -821,17 +800,27 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 			fputs(szLine, pfOut);
 		}
 	}
-	fputs("\n/*--------------------------------------------------Pickups -------------------------------------------------*/\n", pfOut);
 	/////////////////////////////////////////////////
 	// Write all pickups into the file
+	if (!map->second->vectorPickups.empty())
 	{
+		fputs("\t\n/*--------------------------------------------------Pickups -------------------------------------------------*/\n", pfOut);
 		for(auto p : map->second->vectorPickups)
 		{
-			sprintf(szLine, "CreatePickup(%d, 2, %f, %f, %f", CUtils::GetPickupModelIDFromWeaponID((BYTE)p->usModelID), p->vecPos.fX, p->vecPos.fY, p->vecPos.fZ);
+			sprintf(szLine, "\tCreateDynamicPickup(%d, 2, %f, %f, %f", CUtils::GetPickupModelIDFromWeaponID((BYTE)p->usModelID), p->vecPos.fX, p->vecPos.fY, p->vecPos.fZ);
 			
-			if(p->iWorld)
+			if (p->iWorld)
 			{
 				sprintf(szHelp, ", %d", p->iWorld);
+				strcat(szLine, szHelp);
+			}
+
+			if (p->ucInterior)
+			{
+				if (!p->iWorld)
+					strcat(szLine, ", -1");
+
+				sprintf(szHelp, ", %d", p->ucInterior);
 				strcat(szLine, szHelp);
 			}
 
@@ -840,9 +829,20 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 			fputs(szLine, pfOut);
 		}
 	}	
+	/*
+	char szLocation[MAX_PATH];
+	char szCommandLine[MAX_PATH * 3];
+	GetCurrentDirectory(MAX_PATH, szLocation);
+	
+	sprintf(szCommandLine, ".\\pawno\\pawncc.exe %s\\scriptfiles\\maps\\SAMP\\%s.pwn", szLocation, map->second->mapName.c_str());
+	std::string cmd = szCommandLine;
 
+	std::thread t1 (StartPawnCompiler, cmd);
+	t1.detach();
+	*/
+	fputs("\n\treturn 1;\n}\n\nstock AddVehicleComponentInline(vehicleid, ...)\n{\n\tfor (new i = 0, j = numargs(); i != j; ++i)\n\t\tAddVehicleComponent(vehicleid, getarg(i));\n}", pfOut);
 	logprintf("-> %s.map", map->second->mapName.c_str());
-	logprintf("\t%d objects saved", map->second->vectorObjects.size());
+	logprintf("    %d objects saved", map->second->vectorObjects.size());
 	logprintf("    %d remove objects saved", map->second->vectorRemoveObjects.size());
 	logprintf("    %d vehicles saved", map->second->vectorVehicles.size());
 	logprintf("    %d checkpoints saved", map->second->vectorMarkers.size());
@@ -853,6 +853,11 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	return true;
 }
 
+void StartPawnCompiler(std::string str)
+{
+	system(str.c_str());
+}
+
 std::string* CConverter::GetMTAMapName(int mapID)
 {
 	std::unordered_map<int, CMap*>::iterator map = maps.find(mapID);
@@ -861,7 +866,7 @@ std::string* CConverter::GetMTAMapName(int mapID)
 	return &map->second->mapName;
 }
 
-int CConverter::GetMapIDFromName(std::string strMap)
+int CConverter::GetMapIDFromName(std::string &strMap)
 {
 	std::unordered_map<std::string, int>::iterator it = mapNames.find(strMap);
 	if(it == mapNames.end())

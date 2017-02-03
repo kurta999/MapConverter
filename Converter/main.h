@@ -9,6 +9,7 @@
 #include "CConverter.h"
 #include "CUtils.h"
 #include "CVector.h"
+#include "CSingleton.h"
 
 // SAMP SDK
 #include "SDK/plugin.h"
@@ -20,8 +21,7 @@ typedef void (*logprintf_t)(char* format, ...);
 
 // Externals
 extern logprintf_t logprintf;
-extern CConverter *pConverter;
 
 // Defines
 #define NUMELMS(aa) (sizeof(aa) / sizeof((aa)[0]))
-#define SAFE_DELETE(p)	{ if (p) { delete (p); (p) = NULL; } }
+#define SAFE_DELETE(p)	{ if (p) { delete (p); (p) = nullptr; } }

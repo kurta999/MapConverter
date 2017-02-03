@@ -33,7 +33,7 @@
 
 #include <malloc.h>
 
-#if defined HAVE_STDINT_H
+#if !defined HAVE_STDINT_H
   #include <stdint.h>
 #else
   #if defined __LCC__ || defined __DMC__ || defined LINUX

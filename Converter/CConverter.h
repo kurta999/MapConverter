@@ -1,9 +1,11 @@
 #ifndef CCONVERTER_H
 #define CCONVERTER_H
 
+#include "CVector.h"
+#include "CSingleton.h"
+
 #include <stdio.h>
 #include <vector>
-#include "CVector.h"
 #include <unordered_map>
 #include <unordered_set>
 
@@ -67,6 +69,7 @@ struct pickup_t
 
 	WORD usModelID;
 	CVector vecPos;
+	BYTE ucInterior;
 	int iWorld;
 	char szName[32];
 	int extraID;
@@ -129,20 +132,21 @@ public:
 	std::vector<pickup_t*> vectorPickups;
 };
 
-class CConverter 
+class CConverter : public CSingleton<CConverter>
 {
+	friend class CSingleton<CConverter>;
 public:
 	CConverter();
 	~CConverter();
 	
 	int LoadAllMTAMap(bool callPawnFunctions);
-	int LoadMTAMap(std::string strPath, bool callPawnFunctions);
-	int LoadIPL(std::string strPath, bool callPawnFunctions);
+	int LoadMTAMap(std::string &strPath, bool callPawnFunctions);
+	int LoadIPL(std::string &strPath, bool callPawnFunctions);
 	bool IsValidMTAMap(int mapID);
 	bool UnLoadMTAMap(int mapID, bool callPawnFunctions);
 	bool SaveMTAMap(int mapID, ESavingFlags flags);
 	std::string *GetMTAMapName(int mapID);
-	int GetMapIDFromName(std::string strMap);
+	int GetMapIDFromName(std::string &strMap);
 
 private:
 	void ConvertMTAMap(char);
