@@ -47,6 +47,12 @@
     <ClInclude Include="CSingleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\lib\pugixml\pugiconfig.hpp">
+      <Filter>Lib\PugiXML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\pugixml\pugixml.hpp">
+      <Filter>Lib\PugiXML</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SDK\amxplugin.cpp">

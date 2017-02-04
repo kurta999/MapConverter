@@ -82,15 +82,20 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>Converter.def</ModuleDefinitionFile>
-      <OutputFile>C:\Users\Ati\Desktop\tesztszerver\plugins\converter.dll</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName).dll</OutputFile>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>IF EXIST "C:\Users\Ati\Desktop\tesztszerver\plugins" copy /Y "$(TargetDir)$(ProjectName).dll" "C:\Users\Ati\Desktop\tesztszerver\plugins\$(TargetName).dll"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\lib\pugixml\pugiconfig.hpp" />
+    <ClInclude Include="..\lib\pugixml\pugixml.hpp" />
     <ClInclude Include="CCallbackManager.h" />
     <ClInclude Include="CConverter.h" />
     <ClInclude Include="CSingleton.h" />
