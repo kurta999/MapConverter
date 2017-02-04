@@ -120,7 +120,7 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 	
 	// If MTA:DM map
 	const pugi::xml_node &mapNode = doc.child("map");
-	if(mapNode.attribute("edf:definitions").value()[0] || mapNode.attribute("mod").value()[0])
+	if(mapNode.attribute("edf:definitions").value()[0] || !strcmp(mapNode.attribute("mod").value(), "deathmatch"))
 	{
 		//logprintf("mta dm map");
 
@@ -591,20 +591,28 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	char szLine[256];
 	char szHelp[32];
 	bool bVehicleUpgrades = false;
-
-	fputs("#include <a_samp>\n#include <streamer>\n\npublic OnFilterScriptInit()\n{", pfOut);
+	
+	sprintf(szLine, "#include <a_samp>\n#include <streamer>\n// Map Type: %s\n\npublic OnFilterScriptInit()\n{", map->second->mapType == MTA_DM ? "DM" : "Race");
+	fputs(szLine, pfOut);
 	
 	// Add "tempvehid" variable is there are vehicles present
 	if (!map->second->vectorVehicles.empty())
 	{
-		fputs("\n\tnew tempvehid; \n\n", pfOut);
+		for (auto v : map->second->vectorVehicles)
+		{
+			if (!(flags & ONLY_CREATE_VEHICLE) && (v->ucInterior || v->iWorld || v->ucPaintjob < 4 || v->iUpgrades[0]))
+			{
+				fputs("\n\tnew tempvehid; \n\n", pfOut);
+				break;
+			}
+		}
 	}
 
 	/////////////////////////////////////////////////
 	// Write all objects into the file
 	if(!map->second->vectorObjects.empty())
 	{
-		fputs("\t/*--------------------------------------------------Objects -------------------------------------------------*/\n", pfOut);
+		fputs("\n\t/*--------------------------------------------------Objects -------------------------------------------------*/\n", pfOut);
 		for(auto o : map->second->vectorObjects)
 		{
 			if((flags & HIDE_WHEN_ALPHA_NOT_255) && o->ucAlpha != 0xFF)
@@ -654,7 +662,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	// Write all remove objects into the file
 	if (!map->second->vectorRemoveObjects.empty())
 	{
-		fputs("\n/*--------------------------------------------------Remove Objects -------------------------------------------------*/\n", pfOut);
+		fputs("\n\t/*--------------------------------------------------Remove Objects -------------------------------------------------*/\n", pfOut);
 		for(auto r : map->second->vectorRemoveObjects)
 		{
 			sprintf(szLine, "\tRemoveBuildingForPlayer(playerid, %d, %f, %f, %f, %f);\n", r->usModelID, r->vecPos.fX, r->vecPos.fY, r->vecPos.fZ, r->fRadius);
@@ -666,7 +674,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	// Write all vehicles into the file
 	if (!map->second->vectorVehicles.empty())
 	{
-		fputs("\t\n/*--------------------------------------------------Vehicles -------------------------------------------------*/\n", pfOut);
+		fputs("\n\t/*--------------------------------------------------Vehicles -------------------------------------------------*/\n", pfOut);
 		for(auto v : map->second->vectorVehicles)
 		{
 			if(flags & ONLY_CREATE_VEHICLE || (!v->ucInterior && !v->iWorld && v->ucPaintjob > 2 && !v->iUpgrades[0]))
@@ -732,7 +740,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	// Write all markers into the file
 	if (!map->second->vectorMarkers.empty())
 	{
-		fputs("\t\n/*--------------------------------------------------Checkpoints -------------------------------------------------*/\n", pfOut);
+		fputs("\n\t/*--------------------------------------------------Checkpoints -------------------------------------------------*/\n", pfOut);
 		for(auto m : map->second->vectorMarkers)
 		{
 			// // "arrow", "checkpoint", "corona", "cylinder", "ring"
@@ -796,7 +804,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	// Write all pickups into the file
 	if (!map->second->vectorPickups.empty())
 	{
-		fputs("\t\n/*--------------------------------------------------Pickups -------------------------------------------------*/\n", pfOut);
+		fputs("\n\t/*--------------------------------------------------Pickups -------------------------------------------------*/\n", pfOut);
 		for(auto p : map->second->vectorPickups)
 		{
 			sprintf(szLine, "\tCreateDynamicPickup(%d, 2, %f, %f, %f", CUtils::GetPickupModelIDFromWeaponID((BYTE)p->usModelID), p->vecPos.fX, p->vecPos.fY, p->vecPos.fZ);
@@ -832,9 +840,11 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	std::thread t1 (StartPawnCompiler, cmd);
 	t1.detach();
 	*/
-	
+	fputs("\treturn 1;\n}", pfOut);
+
+	// If vehicle components has been used then write our own function at the bottom of script
 	if(bVehicleUpgrades)
-		fputs("\n\treturn 1;\n}\n\nstock AddVehicleComponentInline(vehicleid, ...)\n{\n\tfor (new i = 0, j = numargs(); i != j; ++i)\n\t\tAddVehicleComponent(vehicleid, getarg(i));\n}", pfOut);
+		fputs("\n\nstock AddVehicleComponentInline(vehicleid, ...)\n{\n\tfor (new i = 0, j = numargs(); i != j; ++i)\n\t\tAddVehicleComponent(vehicleid, getarg(i));\n}", pfOut);
 	
 	logprintf("-> %d : %s.map", map->first, map->second->mapName.c_str());
 	logprintf("    %d objects saved", map->second->vectorObjects.size());
