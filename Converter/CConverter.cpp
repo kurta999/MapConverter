@@ -87,15 +87,10 @@ int clampAngle(int angle)
 }
 
 int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
-{	
-	// XML parser objects
-	pugi::xml_document doc;
-    pugi::xml_parse_result result;
-	pugi::xml_node tools;
-	
+{		
 	// Map object
 	CMap* pMap = NULL;
-	int id;
+	int id = mapUpperID++;
 
 	// Remove file type from the end of filename
 	size_t pos = strName.find_last_of(".");
@@ -107,338 +102,333 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 		}
 	}
 	
-	// If map isn't loaded
-	if(mapNames.find(strName) == mapNames.end())
-	{
-		pMap = new CMap(strName);	
-		maps.emplace(mapUpperID, pMap);
-		mapNames.emplace(strName, mapUpperID);
-
-		id = mapUpperID++;
-	}
-	else
-	{
+	// If map already exists with specified name
+	if (mapNames.find(strName) != mapNames.end())
 		return false;
-	}
+
+	pMap = new CMap(strName);	
+	maps.emplace(id, pMap);
+	mapNames.emplace(strName, id);
 
 	char szPath[MAX_PATH];
 	sprintf(szPath, "scriptfiles\\maps\\MTA\\%s.map", strName.c_str());
-	result = doc.load_file(szPath);
-	if(result)
+	
+	// Load the map file
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_file(szPath);
+	//logprintf("value: %s", doc.child("map").attribute("mod").value());
+	
+	// If MTA:DM map
+	const pugi::xml_node &mapNode = doc.child("map");
+	if(mapNode.attribute("edf:definitions").value()[0] || mapNode.attribute("mod").value()[0])
 	{
-		// If MTA:DM map
-		if(doc.child("map").attribute("edf:definitions").value()[0])
+		//logprintf("mta dm map");
+
+		pMap->mapType = MTA_DM;
+		CCallbackManager::OnMapLoadingStart(id, pMap, callPawnFunctions);
+
+		for (auto it : mapNode)
 		{
-			logprintf("mta dm map");
-
-			pMap->mapType = MTA_DM;
-			CCallbackManager::OnMapLoadingStart(id, pMap, callPawnFunctions);
-
-			tools = doc.child("map");
-			for (pugi::xml_node_iterator it = tools.begin(); it != tools.end(); ++it)
+			// objects
+			if(!strcmp(it.name(), "object"))
 			{
-				// objects
-				if(!strcmp(it->name(), "object"))
-				{
-					object_t *object = new object_t;
+				object_t *object = new object_t;
 
-					object->usModelID = static_cast<WORD>(it->attribute("model").as_int());
-					object->vecPos.fX = it->attribute("posX").as_float();
-					object->vecPos.fY = it->attribute("posY").as_float();
-					object->vecPos.fZ = it->attribute("posZ").as_float();
-					object->vecRot.fX = it->attribute("rotX").as_float();
-					object->vecRot.fY = it->attribute("rotY").as_float();
-					object->vecRot.fZ = it->attribute("rotZ").as_float();
-					object->ucInterior = static_cast<BYTE>(it->attribute("interior").as_int());
-					object->iWorld = it->attribute("dimension").as_int();
-					object->ucAlpha = static_cast<BYTE>(it->attribute("alpha").as_int());
-					strcpy(object->szName, it->attribute("id").value());
+				object->usModelID = static_cast<WORD>(it.attribute("model").as_int());
+				object->vecPos.fX = it.attribute("posX").as_float();
+				object->vecPos.fY = it.attribute("posY").as_float();
+				object->vecPos.fZ = it.attribute("posZ").as_float();
+				object->vecRot.fX = it.attribute("rotX").as_float();
+				object->vecRot.fY = it.attribute("rotY").as_float();
+				object->vecRot.fZ = it.attribute("rotZ").as_float();
+				object->ucInterior = static_cast<BYTE>(it.attribute("interior").as_int());
+				object->iWorld = it.attribute("dimension").as_int();
+				object->ucAlpha = static_cast<BYTE>(it.attribute("alpha").as_int());
+				strcpy(object->szName, it.attribute("id").value());
 
-					// Call our own callback
-					if (callPawnFunctions)
-						object->extraID = CCallbackManager::OnObjectDataLoaded(id, object);
+				// Call our own callback
+				if (callPawnFunctions)
+					object->extraID = CCallbackManager::OnObjectDataLoaded(id, object);
 
-					pMap->Insert(object);
-				}
+				pMap->Insert(object);
+			}
 
-				// remove objects
-				if(!strcmp(it->name(), "removeWorldObject"))
-				{
-					removeobject_t *removeobject = new removeobject_t;
+			// remove objects
+			if(!strcmp(it.name(), "removeWorldObject"))
+			{
+				removeobject_t *removeobject = new removeobject_t;
 				
-					removeobject->usModelID = static_cast<WORD>(it->attribute("model").as_int());
-					WORD usLOD = static_cast<WORD>(it->attribute("lodModel").as_int());
-					removeobject->vecPos.fX = it->attribute("posX").as_float();
-					removeobject->vecPos.fY = it->attribute("posY").as_float();
-					removeobject->vecPos.fZ = it->attribute("posZ").as_float();
-					removeobject->fRadius = it->attribute("radius").as_float();
+				removeobject->usModelID = static_cast<WORD>(it.attribute("model").as_int());
+				WORD usLOD = static_cast<WORD>(it.attribute("lodModel").as_int());
+				removeobject->vecPos.fX = it.attribute("posX").as_float();
+				removeobject->vecPos.fY = it.attribute("posY").as_float();
+				removeobject->vecPos.fZ = it.attribute("posZ").as_float();
+				removeobject->fRadius = it.attribute("radius").as_float();
 
+				// Call our own callback
+				if (callPawnFunctions)
+					removeobject->extraID = CCallbackManager::OnRemoveObjectDataLoaded(id, removeobject);
+
+				pMap->Insert(removeobject);
+
+				// If model has LOD model, then push it too to the vector with same parameters
+				if(usLOD)
+				{
 					// Call our own callback
 					if (callPawnFunctions)
 						removeobject->extraID = CCallbackManager::OnRemoveObjectDataLoaded(id, removeobject);
+					else
+						removeobject->extraID = 0;
 
 					pMap->Insert(removeobject);
-
-					// If model has LOD model, then push it too to the vector with same parameters
-					if(usLOD)
-					{
-						// Call our own callback
-						if (callPawnFunctions)
-							removeobject->extraID = CCallbackManager::OnRemoveObjectDataLoaded(id, removeobject);
-						else
-							removeobject->extraID = 0;
-
-						pMap->Insert(removeobject);
-					}
-				}
-
-				// vehicle
-				if(!strcmp(it->name(), "vehicle") || !strcmp(it->name(), "spawnpoint"))
-				{
-					vehicle_t *vehicle = new vehicle_t;
-
-					// Default vehicle format from deathmatch resource
-					if(!strcmp(it->name(), "vehicle"))
-					{
-						vehicle->usModelID = static_cast<WORD>(it->attribute("model").as_int());
-						vehicle->vecPos.fX = it->attribute("posX").as_float();
-						vehicle->vecPos.fY = it->attribute("posY").as_float();
-						vehicle->vecPos.fZ = it->attribute("posZ").as_float();
-						vehicle->fAngle = it->attribute("rotZ").as_float();
-						strcpy(vehicle->szName, it->attribute("id").value());
-					}
-					else // Another vehicle format, from race resource in MTA DM
-					{
-						vehicle->usModelID = static_cast<WORD>(it->attribute("vehicle").as_int());
-						vehicle->vecPos.fX = it->attribute("posX").as_float();
-						vehicle->vecPos.fY = it->attribute("posY").as_float();
-						vehicle->vecPos.fZ = it->attribute("posZ").as_float();
-						vehicle->fAngle = it->attribute("rotZ").as_float();
-						strcpy(vehicle->szName, it->attribute("name").value());
-					}
-		
-					// If color attribute is present
-					if(it->attribute("color"))
-					{
-						BYTE ucColorByte[12];
-						BYTE i = 1;
-
-						// Extract colors from string to array
-						ucColorByte[0] = static_cast<BYTE>(atoi(strtok((char*)it->attribute("color").value(), ",")));
-						for( ; i != 12; i++)
-						{
-							char *szRet = strtok(NULL, ",");
-							if(!szRet) break;
-
-							ucColorByte[i] = static_cast<BYTE>(atoi(szRet));
-							//logprintf("color %d - %d", i, ucColorByte[i]);
-						}
-
-						// New MTA - use HEX colors
-						if(i > 4)
-						{
-							// Get GTA color ID from given hex color
-							vehicle->iColor1 = (int)CUtils::GetPaletteIndexFromRGB(ucColorByte[0], ucColorByte[1], ucColorByte[2]);
-							vehicle->iColor2 = (int)CUtils::GetPaletteIndexFromRGB(ucColorByte[3], ucColorByte[4], ucColorByte[5]);						
-						}
-						else
-						{
-							vehicle->iColor1 = ucColorByte[0];
-							vehicle->iColor2 = ucColorByte[1];
-						}
-					}
-					else
-					{
-						vehicle->iColor1 = -1;
-						vehicle->iColor2 = -1;
-					}
-
-					if(it->attribute("paintjob")) 
-						vehicle->ucPaintjob = static_cast<BYTE>(it->attribute("paintjob").as_int());
-					else
-						vehicle->ucPaintjob = 4;
-
-					// Extract vehicle upgrades from string to array
-					memset(vehicle->iUpgrades, 0, sizeof(vehicle->iUpgrades));
-					if(it->attribute("upgrades"))
-					{
-						//logprintf("vantuning geci");
-						char szUpgrades[128];
-						strcpy(szUpgrades, it->attribute("upgrades").value());
-						
-						vehicle->iUpgrades[0] = atoi(strtok(szUpgrades, ","));
-						for(BYTE i = 1; i != 14; i++)
-						{
-							char *szRet = strtok(NULL, ",");
-							if(!szRet) break;
-
-							vehicle->iUpgrades[i] = atoi(szRet);
-							//logprintf("upgrades %d - %d", i, vehicle.iUpgrades[i]);
-						}
-					}
-					
-					if(it->attribute("plate"))
-						strcpy(vehicle->szPlate, it->attribute("plate").value());
-					else
-						vehicle->szPlate[0] = NULL;
-
-					// If interior attribute is present
-					if(it->attribute("interior")) 
-						vehicle->ucInterior = static_cast<BYTE>(it->attribute("interior").as_int());
-					else
-						vehicle->ucInterior = 0;
-
-					// If dimension attribute is present
-					if(it->attribute("dimension"))
-						vehicle->iWorld = static_cast<BYTE>(it->attribute("dimension").as_int());
-					else
-						vehicle->iWorld = 0;
-
-					// Call our own callback
-					if (callPawnFunctions)
-						vehicle->extraID = CCallbackManager::OnVehicleDataLoaded(id, vehicle);
-
-					pMap->Insert(vehicle);
-				}
-				
-				// marker
-				if(!strcmp(it->name(), "marker"))
-				{
-					marker_t *marker = new marker_t;
-
-					strcpy(marker->szType, it->attribute("type").value());
-					marker->vecPos.fX = it->attribute("posX").as_float();
-					marker->vecPos.fY = it->attribute("posY").as_float();
-					marker->vecPos.fZ = it->attribute("posZ").as_float();
-					marker->fSize = it->attribute("size").as_float();
-					marker->ucInterior = static_cast<BYTE>(it->attribute("interior").as_int());
-					marker->iWorld = it->attribute("dimension").as_int();
-					strcpy(marker->szName, it->attribute("id").value());
-
-					// Call our own callback
-					if (callPawnFunctions)
-						marker->extraID = CCallbackManager::OnCheckpointDataLoaded(id, marker);
-
-					pMap->Insert(marker);
-				}
-
-				// pickup
-				if(!strcmp(it->name(), "pickup"))
-				{
-					pickup_t *pickup = new pickup_t;
-
-					pickup->usModelID = static_cast<WORD>(it->attribute("type").as_int());
-					pickup->vecPos.fX = it->attribute("posX").as_float();
-					pickup->vecPos.fY = it->attribute("posY").as_float();
-					pickup->vecPos.fZ = it->attribute("posZ").as_float();
-					pickup->iWorld = it->attribute("type").as_int();
-					strcpy(pickup->szName, it->attribute("id").value());
-
-					// Call our own callback
-					if (callPawnFunctions)
-						pickup->extraID = CCallbackManager::OnPickupDataLoaded(id, pickup);
-
-					pMap->Insert(pickup);
 				}
 			}
-		}
-		else
-		{
-			object_t object;
-			vehicle_t vehicle;
 
-			pMap->mapType = MTA_RACE;
-			CCallbackManager::OnMapLoadingStart(id, pMap, callPawnFunctions);
-			
-			tools = doc.child("map");
-			for (pugi::xml_node_iterator it = tools.begin(); it != tools.end(); ++it)
+			// vehicle
+			if(!strcmp(it.name(), "vehicle") || !strcmp(it.name(), "spawnpoint"))
 			{
-				// object
-				if(!strcmp(it->name(), "object"))
+				vehicle_t *vehicle = new vehicle_t;
+
+				// Default vehicle format from deathmatch resource
+				if(!strcmp(it.name(), "vehicle"))
 				{
-					char *szPos = (char*)it->child_value("model"); 
-					if(!szPos) continue;
+					vehicle->usModelID = static_cast<WORD>(it.attribute("model").as_int());
+					vehicle->vecPos.fX = it.attribute("posX").as_float();
+					vehicle->vecPos.fY = it.attribute("posY").as_float();
+					vehicle->vecPos.fZ = it.attribute("posZ").as_float();
+					vehicle->fAngle = it.attribute("rotZ").as_float();
+					strcpy(vehicle->szName, it.attribute("id").value());
+				}
+				else // Another vehicle format, from race resource in MTA DM
+				{
+					vehicle->usModelID = static_cast<WORD>(it.attribute("vehicle").as_int());
+					vehicle->vecPos.fX = it.attribute("posX").as_float();
+					vehicle->vecPos.fY = it.attribute("posY").as_float();
+					vehicle->vecPos.fZ = it.attribute("posZ").as_float();
+					vehicle->fAngle = it.attribute("rotZ").as_float();
+					strcpy(vehicle->szName, it.attribute("name").value());
+				}
+		
+				// If color attribute is present
+				if(it.attribute("color"))
+				{
+					BYTE ucColorByte[12];
+					BYTE i = 1;
 
-					object.usModelID = static_cast<WORD>(atoi(szPos));
+					// Extract colors from string to array
+					ucColorByte[0] = static_cast<BYTE>(atoi(strtok((char*)it.attribute("color").value(), ",")));
+					for( ; i != 12; i++)
+					{
+						char *szRet = strtok(NULL, ",");
+						if(!szRet) break;
 
-					if(!(szPos = strtok((char*)it->child_value("position"), " "))) continue;
-					object.vecPos.fX = (float)atof(szPos);
+						ucColorByte[i] = static_cast<BYTE>(atoi(szRet));
+						//logprintf("color %d - %d", i, ucColorByte[i]);
+					}
 
-					if(!(szPos = strtok(NULL, " "))) continue;
-					object.vecPos.fY = (float)atof(szPos);
-
-					if(!(szPos = strtok(NULL, " "))) continue;
-					object.vecPos.fZ = (float)atof(szPos);
-
-					if(!(szPos = strtok((char*)it->child_value("rotation"), " "))) continue;
-					object.vecRot.fZ = CUtils::RadToDeg((float)atof(szPos));
-
-					if(!(szPos = strtok(NULL, " "))) continue;
-					object.vecRot.fY = CUtils::RadToDeg((float)atof(szPos));
-
-					if(!(szPos = strtok(NULL, " "))) continue;
-					object.vecRot.fX = CUtils::RadToDeg((float)atof(szPos));
-
-					object.ucInterior = 0;
-					object.iWorld = 0;
-					object.ucAlpha = 0xFF;
-					strcpy(object.szName, it->attribute("name").value());
-
-					// To avoid memory leaks
-					object_t *pObject = new object_t;
-					memcpy(pObject, &object, sizeof(object_t));
-
-					// Call our own callback
-					if (callPawnFunctions)
-						pObject->extraID = CCallbackManager::OnObjectDataLoaded(id, pObject);
-
-					pMap->Insert(pObject);
+					// New MTA - use HEX colors
+					if(i > 4)
+					{
+						// Get GTA color ID from given hex color
+						vehicle->iColor1 = (int)CUtils::GetPaletteIndexFromRGB(ucColorByte[0], ucColorByte[1], ucColorByte[2]);
+						vehicle->iColor2 = (int)CUtils::GetPaletteIndexFromRGB(ucColorByte[3], ucColorByte[4], ucColorByte[5]);						
+					}
+					else
+					{
+						vehicle->iColor1 = ucColorByte[0];
+						vehicle->iColor2 = ucColorByte[1];
+					}
+				}
+				else
+				{
+					vehicle->iColor1 = -1;
+					vehicle->iColor2 = -1;
 				}
 
-				if(!strcmp(it->name(), "spawnpoint"))
+				if(it.attribute("paintjob")) 
+					vehicle->ucPaintjob = static_cast<BYTE>(it.attribute("paintjob").as_int());
+				else
+					vehicle->ucPaintjob = 4;
+
+				// Extract vehicle upgrades from string to array
+				memset(vehicle->iUpgrades, 0, sizeof(vehicle->iUpgrades));
+				if(it.attribute("upgrades"))
 				{
-					char *szPos = (char*)it->child_value("vehicle"); 
-					if(!szPos) continue;
+					//logprintf("vantuning geci");
+					char szUpgrades[128];
+					strcpy(szUpgrades, it.attribute("upgrades").value());
+						
+					vehicle->iUpgrades[0] = atoi(strtok(szUpgrades, ","));
+					for(BYTE i = 1; i != 14; i++)
+					{
+						char *szRet = strtok(NULL, ",");
+						if(!szRet) break;
 
-					vehicle.usModelID = static_cast<WORD>(atoi(szPos));
+						vehicle->iUpgrades[i] = atoi(szRet);
+						//logprintf("upgrades %d - %d", i, vehicle.iUpgrades[i]);
+					}
+				}
+					
+				if(it.attribute("plate"))
+					strcpy(vehicle->szPlate, it.attribute("plate").value());
+				else
+					vehicle->szPlate[0] = NULL;
 
-					if(!(szPos = strtok((char*)it->child_value("position"), " "))) continue;;
-					vehicle.vecPos.fX = (float)atof(szPos);
+				// If interior attribute is present
+				if(it.attribute("interior")) 
+					vehicle->ucInterior = static_cast<BYTE>(it.attribute("interior").as_int());
+				else
+					vehicle->ucInterior = 0;
 
-					if(!(szPos = strtok(NULL, " "))) continue;
-					vehicle.vecPos.fY = (float)atof(szPos);
+				// If dimension attribute is present
+				if(it.attribute("dimension"))
+					vehicle->iWorld = static_cast<BYTE>(it.attribute("dimension").as_int());
+				else
+					vehicle->iWorld = 0;
 
-					if(!(szPos = strtok(NULL, " "))) continue;
-					vehicle.vecPos.fZ = (float)atof(szPos);
+				// Call our own callback
+				if (callPawnFunctions)
+					vehicle->extraID = CCallbackManager::OnVehicleDataLoaded(id, vehicle);
 
-					if(!(szPos = (char*)it->child_value("rotation"))) continue;
-					vehicle.fAngle = (float)atoi(szPos);
-
-					vehicle.iColor1 = -1;
-					vehicle.iColor2 = -1;
-					vehicle.ucPaintjob = 4;
-					memset(vehicle.iUpgrades, 0, sizeof(vehicle.iUpgrades));
-					vehicle.szPlate[0] = NULL;
-					vehicle.ucInterior = 0;
-					vehicle.iWorld = 0;
-					strcpy(vehicle.szName, it->attribute("name").value());
-
-					// To avoid memory leaks
-					vehicle_t *pVehicle = new vehicle_t;
-					memcpy(pVehicle, &vehicle, sizeof(vehicle_t));
+				pMap->Insert(vehicle);
+			}
 				
-					// Call our own callback
-					if (callPawnFunctions)
-						pVehicle->extraID = CCallbackManager::OnVehicleDataLoaded(id, pVehicle);
+			// marker
+			if(!strcmp(it.name(), "marker"))
+			{
+				marker_t *marker = new marker_t;
 
-					pMap->Insert(pVehicle);				
-				}
+				strcpy(marker->szType, it.attribute("type").value());
+				marker->vecPos.fX = it.attribute("posX").as_float();
+				marker->vecPos.fY = it.attribute("posY").as_float();
+				marker->vecPos.fZ = it.attribute("posZ").as_float();
+				marker->fSize = it.attribute("size").as_float();
+				marker->ucInterior = static_cast<BYTE>(it.attribute("interior").as_int());
+				marker->iWorld = it.attribute("dimension").as_int();
+				strcpy(marker->szName, it.attribute("id").value());
+
+				// Call our own callback
+				if (callPawnFunctions)
+					marker->extraID = CCallbackManager::OnCheckpointDataLoaded(id, marker);
+
+				pMap->Insert(marker);
+			}
+
+			// pickup
+			if(!strcmp(it.name(), "pickup"))
+			{
+				pickup_t *pickup = new pickup_t;
+
+				pickup->usModelID = static_cast<WORD>(it.attribute("type").as_int());
+				pickup->vecPos.fX = it.attribute("posX").as_float();
+				pickup->vecPos.fY = it.attribute("posY").as_float();
+				pickup->vecPos.fZ = it.attribute("posZ").as_float();
+				pickup->iWorld = it.attribute("dimension").as_int();
+				strcpy(pickup->szName, it.attribute("id").value());
+
+				// Call our own callback
+				if (callPawnFunctions)
+					pickup->extraID = CCallbackManager::OnPickupDataLoaded(id, pickup);
+
+				pMap->Insert(pickup);
 			}
 		}
-
-		CCallbackManager::OnMapLoadingFinish(id, pMap, callPawnFunctions, pMap->vectorObjects.size(), pMap->vectorRemoveObjects.size(), pMap->vectorVehicles.size(), pMap->vectorMarkers.size(), pMap->vectorPickups.size());
-		return id;
 	}
+	else
+	{
+		object_t object;
+		vehicle_t vehicle;
+
+		//logprintf("mta race map");
+		pMap->mapType = MTA_RACE;
+		CCallbackManager::OnMapLoadingStart(id, pMap, callPawnFunctions);
+			
+		for (auto it : mapNode)
+		{
+			// object
+			if(!strcmp(it.name(), "object"))
+			{
+				char *szPos = (char*)it.child_value("model"); 
+				if(!szPos) continue;
+
+				object.usModelID = static_cast<WORD>(atoi(szPos));
+
+				if(!(szPos = strtok((char*)it.child_value("position"), " "))) continue;
+				object.vecPos.fX = (float)atof(szPos);
+
+				if(!(szPos = strtok(NULL, " "))) continue;
+				object.vecPos.fY = (float)atof(szPos);
+
+				if(!(szPos = strtok(NULL, " "))) continue;
+				object.vecPos.fZ = (float)atof(szPos);
+
+				if(!(szPos = strtok((char*)it.child_value("rotation"), " "))) continue;
+				object.vecRot.fZ = CUtils::RadToDeg((float)atof(szPos));
+
+				if(!(szPos = strtok(NULL, " "))) continue;
+				object.vecRot.fY = CUtils::RadToDeg((float)atof(szPos));
+
+				if(!(szPos = strtok(NULL, " "))) continue;
+				object.vecRot.fX = CUtils::RadToDeg((float)atof(szPos));
+
+				object.ucInterior = 0;
+				object.iWorld = 0;
+				object.ucAlpha = 0xFF;
+				strcpy(object.szName, it.attribute("name").value());
+
+				// To avoid memory leaks
+				object_t *pObject = new object_t;
+				memcpy(pObject, &object, sizeof(object_t));
+
+				// Call our own callback
+				if (callPawnFunctions)
+					pObject->extraID = CCallbackManager::OnObjectDataLoaded(id, pObject);
+
+				pMap->Insert(pObject);
+			}
+
+			if(!strcmp(it.name(), "spawnpoint"))
+			{
+				char *szPos = (char*)it.child_value("vehicle"); 
+				if(!szPos) continue;
+
+				vehicle.usModelID = static_cast<WORD>(atoi(szPos));
+
+				if(!(szPos = strtok((char*)it.child_value("position"), " "))) continue;;
+				vehicle.vecPos.fX = (float)atof(szPos);
+
+				if(!(szPos = strtok(NULL, " "))) continue;
+				vehicle.vecPos.fY = (float)atof(szPos);
+
+				if(!(szPos = strtok(NULL, " "))) continue;
+				vehicle.vecPos.fZ = (float)atof(szPos);
+
+				if(!(szPos = (char*)it.child_value("rotation"))) continue;
+				vehicle.fAngle = (float)atoi(szPos);
+
+				vehicle.iColor1 = -1;
+				vehicle.iColor2 = -1;
+				vehicle.ucPaintjob = 4;
+				memset(vehicle.iUpgrades, 0, sizeof(vehicle.iUpgrades));
+				vehicle.szPlate[0] = NULL;
+				vehicle.ucInterior = 0;
+				vehicle.iWorld = 0;
+				strcpy(vehicle.szName, it.attribute("name").value());
+
+				// To avoid memory leaks
+				vehicle_t *pVehicle = new vehicle_t;
+				memcpy(pVehicle, &vehicle, sizeof(vehicle_t));
+				
+				// Call our own callback
+				if (callPawnFunctions)
+					pVehicle->extraID = CCallbackManager::OnVehicleDataLoaded(id, pVehicle);
+
+				pMap->Insert(pVehicle);				
+			}
+		}
+	}
+
+	CCallbackManager::OnMapLoadingFinish(id, pMap, callPawnFunctions, pMap->vectorObjects.size(), pMap->vectorRemoveObjects.size(), pMap->vectorVehicles.size(), pMap->vectorMarkers.size(), pMap->vectorPickups.size());
 	return id;
 }
 
@@ -596,13 +586,12 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 
 	char szDir[MAX_PATH];
 	sprintf(szDir, "scriptfiles\\maps\\SAMP\\%s.pwn", map->second->mapName.c_str());
-	logprintf("after strdel: %s", szDir);
 	
 	FILE *pfOut = fopen(szDir, "w");
 	char szLine[256];
 	char szHelp[32];
+	bool bVehicleUpgrades = false;
 
-	logprintf("after fopen");
 	fputs("#include <a_samp>\n#include <streamer>\n\npublic OnFilterScriptInit()\n{", pfOut);
 	
 	// Add "tempvehid" variable is there are vehicles present
@@ -719,6 +708,9 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 
 				if (v->iUpgrades[0])
 				{
+					if(!bVehicleUpgrades)
+						bVehicleUpgrades = true;
+					
 					sprintf(szLine, "\tAddVehicleComponentInline(tempvehid, ");
 					fputs(szLine, pfOut);
 					for (BYTE i = 0; i != 14; i++)
@@ -840,8 +832,11 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	std::thread t1 (StartPawnCompiler, cmd);
 	t1.detach();
 	*/
-	fputs("\n\treturn 1;\n}\n\nstock AddVehicleComponentInline(vehicleid, ...)\n{\n\tfor (new i = 0, j = numargs(); i != j; ++i)\n\t\tAddVehicleComponent(vehicleid, getarg(i));\n}", pfOut);
-	logprintf("-> %s.map", map->second->mapName.c_str());
+	
+	if(bVehicleUpgrades)
+		fputs("\n\treturn 1;\n}\n\nstock AddVehicleComponentInline(vehicleid, ...)\n{\n\tfor (new i = 0, j = numargs(); i != j; ++i)\n\t\tAddVehicleComponent(vehicleid, getarg(i));\n}", pfOut);
+	
+	logprintf("-> %d : %s.map", map->first, map->second->mapName.c_str());
 	logprintf("    %d objects saved", map->second->vectorObjects.size());
 	logprintf("    %d remove objects saved", map->second->vectorRemoveObjects.size());
 	logprintf("    %d vehicles saved", map->second->vectorVehicles.size());
