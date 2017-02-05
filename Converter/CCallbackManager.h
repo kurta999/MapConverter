@@ -21,8 +21,8 @@ public:
 	static void	OnRemoveObjectDataUnLoaded(int mapid, int extraid);
 	static int	OnVehicleDataLoaded(int mapid, vehicle_t *vehicle);
 	static void	OnVehicleDataUnLoaded(int mapid, int extraid);
-	static int	OnCheckpointDataLoaded(int mapid, marker_t *vehicle);
-	static void	OnCheckpointDataUnLoaded(int mapid, int extraid);
+	static int	OnMarkerDataLoaded(int mapid, marker_t *vehicle);
+	static void	OnMarkerDataUnLoaded(int mapid, int extraid);
 	static int	OnPickupDataLoaded(int mapid, pickup_t *vehicle);
 	static void	OnPickupDataUnLoaded(int mapid, int extraid);
 	

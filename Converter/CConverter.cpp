@@ -134,17 +134,17 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 			{
 				object_t *object = new object_t;
 
-				object->usModelID = static_cast<WORD>(it.attribute("model").as_int());
+				object->wModelID = static_cast<WORD>(it.attribute("model").as_int());
 				object->vecPos.fX = it.attribute("posX").as_float();
 				object->vecPos.fY = it.attribute("posY").as_float();
 				object->vecPos.fZ = it.attribute("posZ").as_float();
 				object->vecRot.fX = it.attribute("rotX").as_float();
 				object->vecRot.fY = it.attribute("rotY").as_float();
 				object->vecRot.fZ = it.attribute("rotZ").as_float();
-				object->ucInterior = static_cast<BYTE>(it.attribute("interior").as_int());
+				object->byteInterior = static_cast<BYTE>(it.attribute("interior").as_int());
 				object->iWorld = it.attribute("dimension").as_int();
 				object->ucAlpha = static_cast<BYTE>(it.attribute("alpha").as_int());
-				strcpy(object->szName, it.attribute("id").value());
+				object->strName = it.attribute("id").value();
 
 				// Call our own callback
 				if (callPawnFunctions)
@@ -158,7 +158,7 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 			{
 				removeobject_t *removeobject = new removeobject_t;
 				
-				removeobject->usModelID = static_cast<WORD>(it.attribute("model").as_int());
+				removeobject->wModelID = static_cast<WORD>(it.attribute("model").as_int());
 				WORD usLOD = static_cast<WORD>(it.attribute("lodModel").as_int());
 				removeobject->vecPos.fX = it.attribute("posX").as_float();
 				removeobject->vecPos.fY = it.attribute("posY").as_float();
@@ -192,21 +192,21 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 				// Default vehicle format from deathmatch resource
 				if(!strcmp(it.name(), "vehicle"))
 				{
-					vehicle->usModelID = static_cast<WORD>(it.attribute("model").as_int());
+					vehicle->wModelID = static_cast<WORD>(it.attribute("model").as_int());
 					vehicle->vecPos.fX = it.attribute("posX").as_float();
 					vehicle->vecPos.fY = it.attribute("posY").as_float();
 					vehicle->vecPos.fZ = it.attribute("posZ").as_float();
 					vehicle->fAngle = it.attribute("rotZ").as_float();
-					strcpy(vehicle->szName, it.attribute("id").value());
+					vehicle->strName = it.attribute("id").value();
 				}
 				else // Another vehicle format, from race resource in MTA DM
 				{
-					vehicle->usModelID = static_cast<WORD>(it.attribute("vehicle").as_int());
+					vehicle->wModelID = static_cast<WORD>(it.attribute("vehicle").as_int());
 					vehicle->vecPos.fX = it.attribute("posX").as_float();
 					vehicle->vecPos.fY = it.attribute("posY").as_float();
 					vehicle->vecPos.fZ = it.attribute("posZ").as_float();
 					vehicle->fAngle = it.attribute("rotZ").as_float();
-					strcpy(vehicle->szName, it.attribute("name").value());
+					vehicle->strName = it.attribute("name").value();
 				}
 		
 				// If color attribute is present
@@ -276,9 +276,9 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 
 				// If interior attribute is present
 				if(it.attribute("interior")) 
-					vehicle->ucInterior = static_cast<BYTE>(it.attribute("interior").as_int());
+					vehicle->byteInterior = static_cast<BYTE>(it.attribute("interior").as_int());
 				else
-					vehicle->ucInterior = 0;
+					vehicle->byteInterior = 0;
 
 				// If dimension attribute is present
 				if(it.attribute("dimension"))
@@ -298,18 +298,28 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 			{
 				marker_t *marker = new marker_t;
 
-				strcpy(marker->szType, it.attribute("type").value());
+				// "arrow", "checkpoint", "corona", "cylinder", "ring"
+				switch (it.attribute("type").value()[1])
+				{
+					// arrow	
+					case 'r': marker->type = marker_t::MarkerType::ARROW; break;
+					case 'h': marker->type = marker_t::MarkerType::CHECKPOINT; break;
+					case 'o': marker->type = marker_t::MarkerType::CORONA; break;
+					case 'y': marker->type = marker_t::MarkerType::CYLINDER; break;
+					case 'i': marker->type = marker_t::MarkerType::RING; break;
+				}
+
 				marker->vecPos.fX = it.attribute("posX").as_float();
 				marker->vecPos.fY = it.attribute("posY").as_float();
 				marker->vecPos.fZ = it.attribute("posZ").as_float();
 				marker->fSize = it.attribute("size").as_float();
-				marker->ucInterior = static_cast<BYTE>(it.attribute("interior").as_int());
+				marker->byteInterior = static_cast<BYTE>(it.attribute("interior").as_int());
 				marker->iWorld = it.attribute("dimension").as_int();
-				strcpy(marker->szName, it.attribute("id").value());
+				marker->strName = it.attribute("id").value();
 
 				// Call our own callback
 				if (callPawnFunctions)
-					marker->extraID = CCallbackManager::OnCheckpointDataLoaded(id, marker);
+					marker->extraID = CCallbackManager::OnMarkerDataLoaded(id, marker);
 
 				pMap->Insert(marker);
 			}
@@ -319,12 +329,12 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 			{
 				pickup_t *pickup = new pickup_t;
 
-				pickup->usModelID = static_cast<WORD>(it.attribute("type").as_int());
+				pickup->wModelID = static_cast<WORD>(it.attribute("type").as_int());
 				pickup->vecPos.fX = it.attribute("posX").as_float();
 				pickup->vecPos.fY = it.attribute("posY").as_float();
 				pickup->vecPos.fZ = it.attribute("posZ").as_float();
 				pickup->iWorld = it.attribute("dimension").as_int();
-				strcpy(pickup->szName, it.attribute("id").value());
+				pickup->strName = it.attribute("id").value();
 
 				// Call our own callback
 				if (callPawnFunctions)
@@ -351,7 +361,7 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 				char *szPos = (char*)it.child_value("model"); 
 				if(!szPos) continue;
 
-				object.usModelID = static_cast<WORD>(atoi(szPos));
+				object.wModelID = static_cast<WORD>(atoi(szPos));
 
 				if(!(szPos = strtok((char*)it.child_value("position"), " "))) continue;
 				object.vecPos.fX = (float)atof(szPos);
@@ -371,10 +381,10 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 				if(!(szPos = strtok(NULL, " "))) continue;
 				object.vecRot.fX = CUtils::RadToDeg((float)atof(szPos));
 
-				object.ucInterior = 0;
+				object.byteInterior = 0;
 				object.iWorld = 0;
 				object.ucAlpha = 0xFF;
-				strcpy(object.szName, it.attribute("name").value());
+				object.strName = it.attribute("name").value();
 
 				// To avoid memory leaks
 				object_t *pObject = new object_t;
@@ -392,7 +402,7 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 				char *szPos = (char*)it.child_value("vehicle"); 
 				if(!szPos) continue;
 
-				vehicle.usModelID = static_cast<WORD>(atoi(szPos));
+				vehicle.wModelID = static_cast<WORD>(atoi(szPos));
 
 				if(!(szPos = strtok((char*)it.child_value("position"), " "))) continue;;
 				vehicle.vecPos.fX = (float)atof(szPos);
@@ -411,9 +421,9 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 				vehicle.ucPaintjob = 4;
 				memset(vehicle.iUpgrades, 0, sizeof(vehicle.iUpgrades));
 				vehicle.szPlate[0] = NULL;
-				vehicle.ucInterior = 0;
+				vehicle.byteInterior = 0;
 				vehicle.iWorld = 0;
-				strcpy(vehicle.szName, it.attribute("name").value());
+				vehicle.strName = it.attribute("name").value();
 
 				// To avoid memory leaks
 				vehicle_t *pVehicle = new vehicle_t;
@@ -495,12 +505,12 @@ int CConverter::LoadIPL(std::string &strName, bool callPawnFunctions)
 			QuatToEuler(&quat, &rotX, &rotY, &rotZ);
 
 			object_t* object = new object_t;
-			object->usModelID = modelid;
+			object->wModelID = modelid;
 			object->vecPos = vecPos;
 			object->vecRot.fX = (float)clampAngle(static_cast<int>(rotX));
 			object->vecRot.fY = (float)clampAngle(static_cast<int>(rotY));
 			object->vecRot.fZ = (float)clampAngle(static_cast<int>(rotZ));
-			object->ucInterior = interior;
+			object->byteInterior = interior;
 			object->iWorld = 0;
 			object->ucAlpha = 0xFF;
 
@@ -554,7 +564,7 @@ bool CConverter::UnLoadMTAMap(int mapID, bool callPawnFunctions)
 	for(auto m : map->second->vectorMarkers)
 	{
 		if (callPawnFunctions)
-			CCallbackManager::OnCheckpointDataUnLoaded(mapID, m->extraID);
+			CCallbackManager::OnMarkerDataUnLoaded(mapID, m->extraID);
 
 		SAFE_DELETE(m);
 	}
@@ -600,7 +610,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	{
 		for (auto v : map->second->vectorVehicles)
 		{
-			if (!(flags & ONLY_CREATE_VEHICLE) && (v->ucInterior || v->iWorld || v->ucPaintjob < 4 || v->iUpgrades[0]))
+			if (!(flags & ONLY_CREATE_VEHICLE) && (v->byteInterior || v->iWorld || v->ucPaintjob < 4 || v->iUpgrades[0]))
 			{
 				fputs("\n\tnew tempvehid; \n\n", pfOut);
 				break;
@@ -624,7 +634,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 				strcpy(szLine, "\tCreateDynamicObject(");
 			}
 
-			sprintf(szLine, "%s%d, %f, %f, %f, %f, %f, %f", szLine, o->usModelID, o->vecPos.fX, o->vecPos.fY, o->vecPos.fZ,
+			sprintf(szLine, "%s%d, %f, %f, %f, %f, %f, %f", szLine, o->wModelID, o->vecPos.fX, o->vecPos.fY, o->vecPos.fZ,
 				o->vecRot.fX, o->vecRot.fY, o->vecRot.fZ);
 			
 			// Ha a virtual world, hozzáadjuk a kódhoz
@@ -634,14 +644,14 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 				strcat(szLine, szHelp);
 			}
 
-			if(o->ucInterior)
+			if(o->byteInterior)
 			{
 				// Ha valamilyen interiorban van az object, de a 0-s virtálus világban - hozzáadjuk a 0s interiort a paraméter sorrend miatt
 				if(!o->iWorld)
 				{
 					strcat(szLine, ", -1"); // Streamer pluginban -1 = minden virtuális világban látható
 				}
-				sprintf(szHelp, ", %d", o->ucInterior);
+				sprintf(szHelp, ", %d", o->byteInterior);
 				strcat(szLine, szHelp);
 			}
 
@@ -653,7 +663,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 			{
 				strcat(szLine, ");");
 			}
-			strcat(szLine, GetCommect(o->szName, flags));
+			strcat(szLine, GetCommect(o->strName, flags));
 			fputs(szLine, pfOut);
 		}
 	}
@@ -665,7 +675,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		fputs("\n\t/*--------------------------------------------------Remove Objects -------------------------------------------------*/\n", pfOut);
 		for(auto r : map->second->vectorRemoveObjects)
 		{
-			sprintf(szLine, "\tRemoveBuildingForPlayer(playerid, %d, %f, %f, %f, %f);\n", r->usModelID, r->vecPos.fX, r->vecPos.fY, r->vecPos.fZ, r->fRadius);
+			sprintf(szLine, "\tRemoveBuildingForPlayer(playerid, %d, %f, %f, %f, %f);\n", r->wModelID, r->vecPos.fX, r->vecPos.fY, r->vecPos.fZ, r->fRadius);
 			fputs(szLine, pfOut);
 				
 		}
@@ -677,17 +687,18 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		fputs("\n\t/*--------------------------------------------------Vehicles -------------------------------------------------*/\n", pfOut);
 		for(auto v : map->second->vectorVehicles)
 		{
-			if(flags & ONLY_CREATE_VEHICLE || (!v->ucInterior && !v->iWorld && v->ucPaintjob > 2 && !v->iUpgrades[0]))
+			if(flags & ONLY_CREATE_VEHICLE || (!v->byteInterior && !v->iWorld && v->ucPaintjob > 3 && !v->iUpgrades[0]))
 			{
-				sprintf(szLine, "\tCreateVehicle(%d, %f, %f, %f, %f, %d, %d, -1);", v->usModelID, v->vecPos.fX, v->vecPos.fY, v->vecPos.fZ,
+				sprintf(szLine, "\tCreateVehicle(%d, %f, %f, %f, %f, %d, %d, -1);", v->wModelID, v->vecPos.fX, v->vecPos.fY, v->vecPos.fZ,
 					v->fAngle, v->iColor1, v->iColor2);
-				strcat(szLine, GetCommect(v->szName, flags));
+				strcat(szLine, GetCommect(v->strName, flags));
 				fputs(szLine, pfOut);
 			}
 			else
 			{
-				sprintf(szLine, "\ttempvehid = CreateVehicle(%d, %f, %f, %f, %f, %d, %d, -1);\n", v->usModelID, v->vecPos.fX, v->vecPos.fY, v->vecPos.fZ,
+				sprintf(szLine, "\ttempvehid = CreateVehicle(%d, %f, %f, %f, %f, %d, %d, -1);", v->wModelID, v->vecPos.fX, v->vecPos.fY, v->vecPos.fZ,
 					v->fAngle, v->iColor1, v->iColor2);
+				strcat(szLine, GetCommect(v->strName, flags));
 				fputs(szLine, pfOut);
 
 				if(flags & SAVE_NUMBER_PLATE)
@@ -696,9 +707,9 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 					fputs(szLine, pfOut);
 				}
 
-				if(v->ucInterior)
+				if(v->byteInterior)
 				{
-					sprintf(szLine, "\tLinkVehicleToInterior(tempvehid, %d);\n", v->ucInterior);
+					sprintf(szLine, "\tLinkVehicleToInterior(tempvehid, %d);\n", v->byteInterior);
 					fputs(szLine, pfOut);					
 				}
 					
@@ -708,7 +719,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 					fputs(szLine, pfOut);					
 				}
 
-				if(v->ucPaintjob < 3)
+				if(v->ucPaintjob < 4)
 				{
 					sprintf(szLine, "\tChangeVehiclePaintjob(tempvehid, %d);\n", v->ucPaintjob);
 					fputs(szLine, pfOut);					
@@ -723,6 +734,8 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 					fputs(szLine, pfOut);
 					for (BYTE i = 0; i != 14; i++)
 					{
+						if (!v->iUpgrades[0]) continue;
+
 						if (i == 13)
 							sprintf(szLine, "%d);", v->iUpgrades[i]);
 						else
@@ -744,36 +757,38 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		for(auto m : map->second->vectorMarkers)
 		{
 			// // "arrow", "checkpoint", "corona", "cylinder", "ring"
-			switch(m->szType[1])
+			switch(m->type)
 			{
 				// arrow	
-				case 'r':	
+				case marker_t::MarkerType::ARROW:	
 				{
+					// TODO
 					break;
 				}
 					
 				// checkpoint
-				case 'h': 
+				case marker_t::MarkerType::CHECKPOINT:
 				{
 					sprintf(szLine, "\tCreateDynamicCP(%.4f, %.4f, %.4f, %.4f", m->vecPos.fX, m->vecPos.fY, m->vecPos.fZ, m->fSize);
 					break;
 				}
 
 				// corona
-				case 'o':
+				case marker_t::MarkerType::CORONA:
 				{
+					// TODO
 					break;
 				}
 
 				// cylinder (default CP)
-				case 'y':
+				case marker_t::MarkerType::CYLINDER:
 				{
 					sprintf(szLine, "\tCreateDynamicRaceCP(2, %.4f, %.4f, %.4f, 0.0, 0.0, 0.0, %.4f", m->vecPos.fX, m->vecPos.fY, m->vecPos.fZ, m->fSize);
 					break;
 				}
 
 				// ring
-				case 'i':
+				case marker_t::MarkerType::RING:
 				{
 					sprintf(szLine, "\tCreateDynamicRaceCP(4, %.4f, %.4f, %.4f, 0.0, 0.0, 0.0, %.4f", m->vecPos.fX, m->vecPos.fY, m->vecPos.fZ, m->fSize);
 					break;
@@ -786,17 +801,17 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 				strcat(szLine, szHelp);
 			}
 
-			if(m->ucInterior)
+			if(m->byteInterior)
 			{
 				if(!m->iWorld)
 					strcat(szLine, ", -1");
 
-				sprintf(szHelp, ", %d", m->ucInterior);
+				sprintf(szHelp, ", %d", m->byteInterior);
 				strcat(szLine, szHelp);
 			}
 
 			strcat(szLine, ");");
-			strcat(szLine, GetCommect(m->szName, flags));
+			strcat(szLine, GetCommect(m->strName, flags));
 			fputs(szLine, pfOut);
 		}
 	}
@@ -807,7 +822,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		fputs("\n\t/*--------------------------------------------------Pickups -------------------------------------------------*/\n", pfOut);
 		for(auto p : map->second->vectorPickups)
 		{
-			sprintf(szLine, "\tCreateDynamicPickup(%d, 2, %f, %f, %f", CUtils::GetPickupModelIDFromWeaponID((BYTE)p->usModelID), p->vecPos.fX, p->vecPos.fY, p->vecPos.fZ);
+			sprintf(szLine, "\tCreateDynamicPickup(%d, 2, %f, %f, %f", CUtils::GetPickupModelIDFromWeaponID((BYTE)p->wModelID), p->vecPos.fX, p->vecPos.fY, p->vecPos.fZ);
 			
 			if (p->iWorld)
 			{
@@ -815,17 +830,17 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 				strcat(szLine, szHelp);
 			}
 
-			if (p->ucInterior)
+			if (p->byteInterior)
 			{
 				if (!p->iWorld)
 					strcat(szLine, ", -1");
 
-				sprintf(szHelp, ", %d", p->ucInterior);
+				sprintf(szHelp, ", %d", p->byteInterior);
 				strcat(szLine, szHelp);
 			}
 
 			strcat(szLine, ");");
-			strcat(szLine, GetCommect(p->szName, flags));
+			strcat(szLine, GetCommect(p->strName, flags));
 			fputs(szLine, pfOut);
 		}
 	}	
@@ -852,7 +867,8 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	logprintf("    %d vehicles saved", map->second->vectorVehicles.size());
 	logprintf("    %d checkpoints saved", map->second->vectorMarkers.size());
 	logprintf("    %d pickups saved\n", map->second->vectorPickups.size());
-		
+	logprintf("    %d actors saved\n", map->second->vectorPeds.size());
+
 	// Close output file
 	fclose(pfOut); 
 	return true;
@@ -880,17 +896,17 @@ int CConverter::GetMapIDFromName(std::string &strMap)
 	return it->second;
 }
 
-char *CConverter::GetCommect(char *szFromComment, ESavingFlags flags)
+const char *CConverter::GetCommect(std::string const &szFromComment, ESavingFlags flags)
 {
-	static char szRet[64];
+	static char szRet[64 + 1]; // Max comment size in MTA
 
-	if(!szFromComment || !(flags & CONVERT_ELEMENT_NAME))
+	if(szFromComment.empty() || !(flags & CONVERT_ELEMENT_NAME))
 	{
-		sprintf(szRet, "\n");
+		strcpy(szRet, "\n");
 	}
 	else
 	{
-		sprintf(szRet, " // %s\n", szFromComment);
+		sprintf(szRet, " // %s\n", szFromComment.c_str());
 	}
 	return szRet;
 }

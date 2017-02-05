@@ -77,14 +77,14 @@ int CCallbackManager::OnObjectDataLoaded(int mapid, object_t *object)
 		{
 			// Push the parameters
 			amx_Push(i, static_cast<cell>(object->iWorld));
-			amx_Push(i, static_cast<cell>(object->ucInterior));
+			amx_Push(i, static_cast<cell>(object->byteInterior));
 			amx_Push(i, amx_ftoc(object->vecRot.fZ));
 			amx_Push(i, amx_ftoc(object->vecRot.fY));
 			amx_Push(i, amx_ftoc(object->vecRot.fX));
 			amx_Push(i, amx_ftoc(object->vecPos.fZ));
 			amx_Push(i, amx_ftoc(object->vecPos.fY));
 			amx_Push(i, amx_ftoc(object->vecPos.fX));
-			amx_Push(i, static_cast<cell>(object->usModelID));
+			amx_Push(i, static_cast<cell>(object->wModelID));
 			amx_Push(i, static_cast<cell>(mapid));
 
 			// Execute the callback
@@ -127,7 +127,7 @@ int CCallbackManager::OnRemoveObjectDataLoaded(int mapid, removeobject_t *object
 			amx_Push(i, amx_ftoc(object->vecPos.fZ));
 			amx_Push(i, amx_ftoc(object->vecPos.fY));
 			amx_Push(i, amx_ftoc(object->vecPos.fX));
-			amx_Push(i, static_cast<cell>(object->usModelID));
+			amx_Push(i, static_cast<cell>(object->wModelID));
 			amx_Push(i, static_cast<cell>(mapid));
 
 			// Execute the callback
@@ -174,7 +174,7 @@ int CCallbackManager::OnVehicleDataLoaded(int mapid, vehicle_t *vehicle)
 			memcpy(phys_addr, vehicle->iUpgrades, sizeof(vehicle->iUpgrades));
 
 			amx_Push(i, static_cast<cell>(vehicle->iWorld));
-			amx_Push(i, static_cast<cell>(vehicle->ucInterior));
+			amx_Push(i, static_cast<cell>(vehicle->byteInterior));
 			amx_PushString(i, &addr, NULL, vehicle->szPlate, NULL, NULL);
 			amx_Push(i, amx_addr);
 			amx_Push(i, static_cast<cell>(vehicle->ucPaintjob));
@@ -184,7 +184,7 @@ int CCallbackManager::OnVehicleDataLoaded(int mapid, vehicle_t *vehicle)
 			amx_Push(i, amx_ftoc(vehicle->vecPos.fZ));
 			amx_Push(i, amx_ftoc(vehicle->vecPos.fY));
 			amx_Push(i, amx_ftoc(vehicle->vecPos.fX));
-			amx_Push(i, static_cast<cell>(vehicle->usModelID));
+			amx_Push(i, static_cast<cell>(vehicle->wModelID));
 			amx_Push(i, static_cast<cell>(mapid));
 
 			// Execute the callback
@@ -214,43 +214,40 @@ void CCallbackManager::OnVehicleDataUnLoaded(int mapid, int extraid)
 	}
 }
 
-int CCallbackManager::OnCheckpointDataLoaded(int mapid, marker_t *marker)
+int CCallbackManager::OnMarkerDataLoaded(int mapid, marker_t *marker)
 {
 	cell ret = -1;
 	for (auto i : m_listAMX)
 	{
 		// Get the function index
 		int iIndex;
-		if(!amx_FindPublic(i, "OnCheckpointDataLoaded", &iIndex))
+		if(!amx_FindPublic(i, "OnMarkerDataLoaded", &iIndex))
 		{
 			// Push the parameters
-			cell
-				addr;
 			amx_Push(i, static_cast<cell>(marker->iWorld));
-			amx_Push(i, static_cast<cell>(marker->ucInterior));
+			amx_Push(i, static_cast<cell>(marker->byteInterior));
 			amx_Push(i, amx_ftoc(marker->fSize));
 			amx_Push(i, amx_ftoc(marker->vecPos.fZ));
 			amx_Push(i, amx_ftoc(marker->vecPos.fY));
 			amx_Push(i, amx_ftoc(marker->vecPos.fX));
-			amx_PushString(i, &addr, NULL, marker->szType, NULL, NULL);
+			amx_Push(i, static_cast<cell>(marker->type));
 			amx_Push(i, static_cast<cell>(mapid));
 
 			// Execute the callback
 			amx_Exec(i, &ret, iIndex);
-			amx_Release(i, addr);
 		}
 	}
 	return static_cast<int>(ret);
 }
 
-void CCallbackManager::OnCheckpointDataUnLoaded(int mapid, int extraid)
+void CCallbackManager::OnMarkerDataUnLoaded(int mapid, int extraid)
 {
 	cell ret = -1;
 	for (auto i : m_listAMX)
 	{
 		// Get the function index
 		int iIndex;
-		if (!amx_FindPublic(i, "OnCheckpointDataUnLoaded", &iIndex))
+		if (!amx_FindPublic(i, "OnMarkerDataUnLoaded", &iIndex))
 		{
 			// Push the parameters
 			amx_Push(i, static_cast<cell>(extraid));
@@ -273,11 +270,11 @@ int CCallbackManager::OnPickupDataLoaded(int mapid, pickup_t *picup)
 		{
 			// Push the parameters
 			amx_Push(i, static_cast<cell>(picup->iWorld));
-			amx_Push(i, static_cast<cell>(picup->ucInterior));
+			amx_Push(i, static_cast<cell>(picup->byteInterior));
 			amx_Push(i, amx_ftoc(picup->vecPos.fZ));
 			amx_Push(i, amx_ftoc(picup->vecPos.fY));
 			amx_Push(i, amx_ftoc(picup->vecPos.fX));
-			amx_Push(i, static_cast<cell>(picup->usModelID));
+			amx_Push(i, static_cast<cell>(picup->wModelID));
 
 			// Execute the callback
 			amx_Exec(i, &ret, iIndex);

@@ -13,13 +13,13 @@ struct object_t
 {
 	object_t::object_t() : extraID(0) { }
 
-	WORD usModelID;
+	WORD wModelID;
 	CVector vecPos;
 	CVector vecRot;
-	BYTE ucInterior;
+	BYTE byteInterior;
 	int iWorld;
 	BYTE ucAlpha;
-	char szName[32];
+	std::string strName;
 	int extraID;
 };
 
@@ -27,7 +27,7 @@ struct removeobject_t
 {
 	removeobject_t::removeobject_t() : extraID(0) { }
 
-	WORD usModelID;
+	WORD wModelID;
 	CVector vecPos;
 	float fRadius;
 	int extraID;
@@ -37,29 +37,40 @@ struct vehicle_t
 {
 	vehicle_t::vehicle_t() : extraID(0) { }
 
-	WORD usModelID;
+	WORD wModelID;
 	CVector vecPos;
 	float fAngle;
 	int iColor1, iColor2;
 	BYTE ucPaintjob;
 	int iUpgrades[14];
 	char szPlate[32];
-	BYTE ucInterior;
+	BYTE byteInterior;
 	int iWorld;
-	char szName[32];
+	std::string strName;
 	int extraID;
 };
+
+
 
 struct marker_t
 {
 	marker_t::marker_t() : extraID(0) { }
 
-	char szType[24];
+	enum class MarkerType : BYTE
+	{
+		ARROW,
+		CHECKPOINT,
+		CORONA,
+		CYLINDER,
+		RING
+	};
+
+	MarkerType type;
 	CVector vecPos;
 	float fSize;
-	BYTE ucInterior;
+	BYTE byteInterior;
 	int iWorld;
-	char szName[32];
+	std::string strName;
 	int extraID;
 };
 
@@ -67,11 +78,24 @@ struct pickup_t
 {
 	pickup_t::pickup_t() : extraID(0) { }
 
-	WORD usModelID;
+	WORD wModelID;
 	CVector vecPos;
-	BYTE ucInterior;
+	BYTE byteInterior;
 	int iWorld;
-	char szName[32];
+	std::string strName;
+	int extraID;
+};
+
+struct ped_t
+{
+	ped_t::ped_t() : extraID(0) { }
+
+	WORD wModelID;
+	CVector vecPos;
+	float fAngle;
+	BYTE byteInterior;
+	int iWorld;
+	std::string strName;
 	int extraID;
 };
 
@@ -123,6 +147,11 @@ public:
 		vectorPickups.push_back(object);
 	}
 
+	inline void CMap::Insert(ped_t *object)
+	{
+		vectorPeds.push_back(object);
+	}
+
 	std::string mapName;
 	EMapType mapType;
 	std::vector<object_t*> vectorObjects;
@@ -130,6 +159,7 @@ public:
 	std::vector<vehicle_t*> vectorVehicles;
 	std::vector<marker_t*> vectorMarkers;
 	std::vector<pickup_t*> vectorPickups;
+	std::vector<ped_t*> vectorPeds;
 };
 
 class CConverter : public CSingleton<CConverter>
@@ -150,7 +180,7 @@ public:
 
 private:
 	void ConvertMTAMap(char);
-	char *GetCommect(char *szFromComment, ESavingFlags flags);
+	const char *CConverter::GetCommect(std::string const &szFromComment, ESavingFlags flags);
 
 	int mapUpperID;
 	std::unordered_map<int, CMap*> maps;
