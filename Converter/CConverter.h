@@ -68,6 +68,7 @@ struct marker_t
 	MarkerType type;
 	CVector vecPos;
 	float fSize;
+	DWORD dwColor;
 	BYTE byteInterior;
 	int iWorld;
 	std::string strName;
@@ -76,7 +77,7 @@ struct marker_t
 
 struct pickup_t
 {
-	pickup_t::pickup_t() : extraID(0) { }
+	pickup_t::pickup_t() : extraID(0), byteInterior(0) { }
 
 	WORD wModelID;
 	CVector vecPos;

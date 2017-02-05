@@ -1,5 +1,7 @@
 #include "main.h"
 #include <thread>
+#include <sstream>
+#include <iomanip>
 
 extern logprintf_t logprintf;
 extern CConverter *pConverter;
@@ -313,6 +315,9 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 				marker->vecPos.fY = it.attribute("posY").as_float();
 				marker->vecPos.fZ = it.attribute("posZ").as_float();
 				marker->fSize = it.attribute("size").as_float();
+				
+				std::string hexstring = std::string(it.attribute("color").as_string()).substr(1);
+				marker->dwColor = std::strtoul(hexstring.c_str(), 0, 16);
 				marker->byteInterior = static_cast<BYTE>(it.attribute("interior").as_int());
 				marker->iWorld = it.attribute("dimension").as_int();
 				marker->strName = it.attribute("id").value();
@@ -329,7 +334,26 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 			{
 				pickup_t *pickup = new pickup_t;
 
-				pickup->wModelID = static_cast<WORD>(it.attribute("type").as_int());
+				std::string strType = it.attribute("type").as_string();
+
+				// If it's a weapon
+				if (IsNumeric(strType))
+				{
+					WORD weaponid = CUtils::GetWeaponModel(it.attribute("type").as_int());
+				
+					if (weaponid)
+						pickup->wModelID = weaponid;
+					else
+						pickup->wModelID = static_cast<WORD>(it.attribute("type").as_int());
+				}
+				else
+				{
+					if (strType == "health")
+						pickup->wModelID = 1240;
+					else if (strType == "armor")
+						pickup->wModelID = 1242;
+				}
+
 				pickup->vecPos.fX = it.attribute("posX").as_float();
 				pickup->vecPos.fY = it.attribute("posY").as_float();
 				pickup->vecPos.fZ = it.attribute("posZ").as_float();
@@ -730,21 +754,28 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 					if(!bVehicleUpgrades)
 						bVehicleUpgrades = true;
 					
-					sprintf(szLine, "\tAddVehicleComponentInline(tempvehid, ");
-					fputs(szLine, pfOut);
+					sprintf(szLine, "\tAddVehicleComponentInline(tempvehid");
 					for (BYTE i = 0; i != 14; i++)
 					{
-						if (!v->iUpgrades[i]) continue;
+						if (v->iUpgrades[i])
+						{
+							char szTemp[12];
+							
+							if (i != 13)
+								strcat(szLine, ", ");
+
+							sprintf(szTemp, "%d", v->iUpgrades[i]);
+							strcat(szLine, szTemp);
+
+						}
 
 						if (i == 13)
-							sprintf(szLine, "%d);\n", v->iUpgrades[i]);
-						else
-							sprintf(szLine, "%d, ", v->iUpgrades[i]);
-						
-						fputs(szLine, pfOut);
+						{
+							strcat(szLine, ");\n");  
+							fputs(szLine, pfOut);
+						}
 					}
 				}
-
 			}
 		}
 	}
@@ -762,7 +793,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 				// arrow	
 				case marker_t::MarkerType::ARROW:	
 				{
-					// TODO
+					sprintf(szLine, "\tSetDynamicObjectMaterial(CreateDynamicObject(19180, %f, %f, %f, 0.0, 0.0, 0.0), 0, 0, \"a\", \"a\", 0x%X);", m->vecPos.fX, m->vecPos.fY, m->vecPos.fZ, m->dwColor);
 					break;
 				}
 					
@@ -776,7 +807,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 				// corona
 				case marker_t::MarkerType::CORONA:
 				{
-					// TODO
+					// I'll do it, if somebody give me an object which is good to imitate corona (aka object which is lighting without object, like the sun)
 					break;
 				}
 
@@ -795,24 +826,27 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 				}
 			}
 
-			if(m->iWorld)
+			if (m->type != marker_t::MarkerType::CORONA)
 			{
-				sprintf(szHelp, ", %d", m->iWorld);
-				strcat(szLine, szHelp);
+				if (m->iWorld)
+				{
+					sprintf(szHelp, ", %d", m->iWorld);
+					strcat(szLine, szHelp);
+				}
+
+				if (m->byteInterior)
+				{
+					if (!m->iWorld)
+						strcat(szLine, ", -1");
+
+					sprintf(szHelp, ", %d", m->byteInterior);
+					strcat(szLine, szHelp);
+				}
+
+				strcat(szLine, ");");
+				strcat(szLine, GetCommect(m->strName, flags));
+				fputs(szLine, pfOut);
 			}
-
-			if(m->byteInterior)
-			{
-				if(!m->iWorld)
-					strcat(szLine, ", -1");
-
-				sprintf(szHelp, ", %d", m->byteInterior);
-				strcat(szLine, szHelp);
-			}
-
-			strcat(szLine, ");");
-			strcat(szLine, GetCommect(m->strName, flags));
-			fputs(szLine, pfOut);
 		}
 	}
 	/////////////////////////////////////////////////
@@ -822,7 +856,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		fputs("\n\t/*--------------------------------------------------Pickups -------------------------------------------------*/\n", pfOut);
 		for(auto p : map->second->vectorPickups)
 		{
-			sprintf(szLine, "\tCreateDynamicPickup(%d, 2, %f, %f, %f", CUtils::GetPickupModelIDFromWeaponID((BYTE)p->wModelID), p->vecPos.fX, p->vecPos.fY, p->vecPos.fZ);
+			sprintf(szLine, "\tCreateDynamicPickup(%d, 2, %f, %f, %f", p->wModelID, p->vecPos.fX, p->vecPos.fY, p->vecPos.fZ);
 			
 			if (p->iWorld)
 			{
