@@ -89,7 +89,7 @@ struct pickup_t
 
 struct ped_t
 {
-	ped_t::ped_t() : extraID(0) { }
+	ped_t::ped_t() : extraID(0), byteInterior(0) { }
 
 	WORD wModelID;
 	CVector vecPos;

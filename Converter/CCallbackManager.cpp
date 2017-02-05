@@ -38,7 +38,7 @@ void CCallbackManager::OnMapLoadingStart(int mapid, CMap *pMap, bool callPawnFun
 	}
 }
 
-void CCallbackManager::OnMapLoadingFinish(int mapid, CMap *pMap, bool callPawnFunctions, int objects, int removeobjects, int vehicles, int checkpoints, int pickups)
+void CCallbackManager::OnMapLoadingFinish(int mapid, CMap *pMap, bool callPawnFunctions, int objects, int removeobjects, int vehicles, int markers, int pickups, int actors)
 {
 	for (auto i : m_listAMX)
 	{
@@ -49,8 +49,9 @@ void CCallbackManager::OnMapLoadingFinish(int mapid, CMap *pMap, bool callPawnFu
 			cell addr;
 
 			// Push the parameters
+			amx_Push(i, static_cast<cell>(actors));
 			amx_Push(i, static_cast<cell>(pickups));
-			amx_Push(i, static_cast<cell>(checkpoints));
+			amx_Push(i, static_cast<cell>(markers));
 			amx_Push(i, static_cast<cell>(vehicles));
 			amx_Push(i, static_cast<cell>(removeobjects));
 			amx_Push(i, static_cast<cell>(objects));
@@ -292,6 +293,51 @@ void CCallbackManager::OnPickupDataUnLoaded(int mapid, int extraid)
 		// Get the function index
 		int iIndex;
 		if (!amx_FindPublic(i, "OnPickupDataUnLoaded", &iIndex))
+		{
+			// Push the parameters
+			amx_Push(i, static_cast<cell>(extraid));
+			amx_Push(i, static_cast<cell>(mapid));
+
+			// Execute the callback
+			amx_Exec(i, &ret, iIndex);
+		}
+	}
+}
+
+int CCallbackManager::OnActorDataLoaded(int mapid, ped_t *ped)
+{
+	cell ret = -1;
+	for (auto i : m_listAMX)
+	{
+		// Get the function index
+		int iIndex;
+		if (!amx_FindPublic(i, "OnActorDataLoaded", &iIndex))
+		{
+			// Push the parameters
+			amx_Push(i, static_cast<cell>(ped->iWorld));
+			amx_Push(i, static_cast<cell>(ped->byteInterior));
+			amx_Push(i, amx_ftoc(ped->fAngle));
+			amx_Push(i, amx_ftoc(ped->vecPos.fZ));
+			amx_Push(i, amx_ftoc(ped->vecPos.fY));
+			amx_Push(i, amx_ftoc(ped->vecPos.fX));
+			amx_Push(i, static_cast<cell>(ped->wModelID));
+
+			// Execute the callback
+			amx_Exec(i, &ret, iIndex);
+			break;
+		}
+	}
+	return static_cast<int>(ret);
+}
+
+void CCallbackManager::OnActorDataUnLoaded(int mapid, int extraid)
+{
+	cell ret = -1;
+	for (auto i : m_listAMX)
+	{
+		// Get the function index
+		int iIndex;
+		if (!amx_FindPublic(i, "OnActorDataUnLoaded", &iIndex))
 		{
 			// Push the parameters
 			amx_Push(i, static_cast<cell>(extraid));

@@ -366,6 +366,27 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 
 				pMap->Insert(pickup);
 			}
+
+			// ped
+			if (!strcmp(it.name(), "ped"))
+			{
+				ped_t *ped = new ped_t;
+
+				ped->wModelID = static_cast<WORD>(it.attribute("model").as_int());
+				ped->vecPos.fX = it.attribute("posX").as_float();
+				ped->vecPos.fY = it.attribute("posY").as_float();
+				ped->vecPos.fZ = it.attribute("posZ").as_float();
+				ped->fAngle = it.attribute("rotZ").as_float();
+				ped->strName = it.attribute("id").value();
+				ped->iWorld = it.attribute("dimension").as_int();
+
+				// Call our own callback
+				if (callPawnFunctions)
+					ped->extraID = CCallbackManager::OnActorDataLoaded(id, ped);
+
+				pMap->Insert(ped);
+			}
+
 		}
 	}
 	else
@@ -462,7 +483,7 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 		}
 	}
 
-	CCallbackManager::OnMapLoadingFinish(id, pMap, callPawnFunctions, pMap->vectorObjects.size(), pMap->vectorRemoveObjects.size(), pMap->vectorVehicles.size(), pMap->vectorMarkers.size(), pMap->vectorPickups.size());
+	CCallbackManager::OnMapLoadingFinish(id, pMap, callPawnFunctions, pMap->vectorObjects.size(), pMap->vectorRemoveObjects.size(), pMap->vectorVehicles.size(), pMap->vectorMarkers.size(), pMap->vectorPickups.size(), pMap->vectorPeds.size());
 	return id;
 }
 
@@ -545,7 +566,7 @@ int CConverter::LoadIPL(std::string &strName, bool callPawnFunctions)
 			pMap->Insert(object);
 		}
 	}
-	CCallbackManager::OnMapLoadingFinish(id, pMap, callPawnFunctions, pMap->vectorObjects.size(), 0, 0, 0, 0);
+	CCallbackManager::OnMapLoadingFinish(id, pMap, callPawnFunctions, pMap->vectorObjects.size(), 0, 0, 0, 0, 0);
 	t.close();
 	return true;
 }
@@ -601,11 +622,20 @@ bool CConverter::UnLoadMTAMap(int mapID, bool callPawnFunctions)
 		SAFE_DELETE(p);
 	}
 
+	for (auto p : map->second->vectorPeds)
+	{
+		if (callPawnFunctions)
+			CCallbackManager::OnActorDataUnLoaded(mapID, p->extraID);
+
+		SAFE_DELETE(p);
+	}
+
 	map->second->vectorObjects.clear();
 	map->second->vectorRemoveObjects.clear();
 	map->second->vectorVehicles.clear();
 	map->second->vectorMarkers.clear();
 	map->second->vectorPickups.clear();
+	map->second->vectorPeds.clear();
 
 	SAFE_DELETE(map->second);
 	maps.erase(map);
@@ -646,7 +676,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	// Write all objects into the file
 	if(!map->second->vectorObjects.empty())
 	{
-		fputs("\n\t/*--------------------------------------------------Objects -------------------------------------------------*/\n", pfOut);
+		fputs("\n\t/*-------------------------------------------------- Objects -------------------------------------------------*/\n", pfOut);
 		for(auto o : map->second->vectorObjects)
 		{
 			if((flags & HIDE_WHEN_ALPHA_NOT_255) && o->ucAlpha != 0xFF)
@@ -696,7 +726,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	// Write all remove objects into the file
 	if (!map->second->vectorRemoveObjects.empty())
 	{
-		fputs("\n\t/*--------------------------------------------------Remove Objects -------------------------------------------------*/\n", pfOut);
+		fputs("\n\t/*-------------------------------------------------- Remove Objects -------------------------------------------------*/\n", pfOut);
 		for(auto r : map->second->vectorRemoveObjects)
 		{
 			sprintf(szLine, "\tRemoveBuildingForPlayer(playerid, %d, %f, %f, %f, %f);\n", r->wModelID, r->vecPos.fX, r->vecPos.fY, r->vecPos.fZ, r->fRadius);
@@ -708,7 +738,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	// Write all vehicles into the file
 	if (!map->second->vectorVehicles.empty())
 	{
-		fputs("\n\t/*--------------------------------------------------Vehicles -------------------------------------------------*/\n", pfOut);
+		fputs("\n\t/*-------------------------------------------------- Vehicles -------------------------------------------------*/\n", pfOut);
 		for(auto v : map->second->vectorVehicles)
 		{
 			if(flags & ONLY_CREATE_VEHICLE || (!v->byteInterior && !v->iWorld && v->ucPaintjob > 2 && !v->iUpgrades[0]))
@@ -784,7 +814,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	// Write all markers into the file
 	if (!map->second->vectorMarkers.empty())
 	{
-		fputs("\n\t/*--------------------------------------------------Checkpoints -------------------------------------------------*/\n", pfOut);
+		fputs("\n\t/*-------------------------------------------------- Checkpoints -------------------------------------------------*/\n", pfOut);
 		for(auto m : map->second->vectorMarkers)
 		{
 			// // "arrow", "checkpoint", "corona", "cylinder", "ring"
@@ -853,7 +883,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	// Write all pickups into the file
 	if (!map->second->vectorPickups.empty())
 	{
-		fputs("\n\t/*--------------------------------------------------Pickups -------------------------------------------------*/\n", pfOut);
+		fputs("\n\t/*-------------------------------------------------- Pickups -------------------------------------------------*/\n", pfOut);
 		for(auto p : map->second->vectorPickups)
 		{
 			sprintf(szLine, "\tCreateDynamicPickup(%d, 2, %f, %f, %f", p->wModelID, p->vecPos.fX, p->vecPos.fY, p->vecPos.fZ);
@@ -878,6 +908,19 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 			fputs(szLine, pfOut);
 		}
 	}	
+	/////////////////////////////////////////////////
+	// Write all peds into the file
+	if (!map->second->vectorPickups.empty())
+	{
+		fputs("\n\t/*-------------------------------------------------- Actors -------------------------------------------------*/\n", pfOut);
+		for (auto p : map->second->vectorPeds)
+		{
+			sprintf(szLine, "\tCreateActor(%d, %f, %f, %f, %f);", p->wModelID, p->vecPos.fX, p->vecPos.fY, p->vecPos.fZ, p->fAngle);
+			strcat(szLine, GetCommect(p->strName, flags));
+			fputs(szLine, pfOut);
+		}
+	}
+
 	/*
 	char szLocation[MAX_PATH];
 	char szCommandLine[MAX_PATH * 3];
@@ -900,7 +943,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	logprintf("    %d remove objects saved", map->second->vectorRemoveObjects.size());
 	logprintf("    %d vehicles saved", map->second->vectorVehicles.size());
 	logprintf("    %d checkpoints saved", map->second->vectorMarkers.size());
-	logprintf("    %d pickups saved\n", map->second->vectorPickups.size());
+	logprintf("    %d pickups saved", map->second->vectorPickups.size());
 	logprintf("    %d actors saved\n", map->second->vectorPeds.size());
 
 	// Close output file

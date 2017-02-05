@@ -13,7 +13,7 @@ public:
 		
 	// Callbacks
 	static void OnMapLoadingStart(int mapid, CMap *pMap, bool callPawnFunctions);
-	static void OnMapLoadingFinish(int mapid, CMap *pMap, bool callPawnFunctions, int objects, int removeobjects, int vehicles, int checkpoints, int pickups);
+	static void OnMapLoadingFinish(int mapid, CMap *pMap, bool callPawnFunctions, int objects, int removeobjects, int vehicles, int markers, int pickups, int actors);
 
 	static int	OnObjectDataLoaded(int mapid, object_t *object);
 	static void	OnObjectDataUnLoaded(int mapid, int extraid);
@@ -25,7 +25,9 @@ public:
 	static void	OnMarkerDataUnLoaded(int mapid, int extraid);
 	static int	OnPickupDataLoaded(int mapid, pickup_t *vehicle);
 	static void	OnPickupDataUnLoaded(int mapid, int extraid);
-	
+	static int	OnActorDataLoaded(int mapid, ped_t *ped);
+	static void	OnActorDataUnLoaded(int mapid, int extraid);
+
 	static std::set<AMX *>		m_listAMX;
 };
 #endif
