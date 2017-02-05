@@ -248,7 +248,7 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 				if(it.attribute("paintjob")) 
 					vehicle->ucPaintjob = static_cast<BYTE>(it.attribute("paintjob").as_int());
 				else
-					vehicle->ucPaintjob = 4;
+					vehicle->ucPaintjob = 3;
 
 				// Extract vehicle upgrades from string to array
 				memset(vehicle->iUpgrades, 0, sizeof(vehicle->iUpgrades));
@@ -418,7 +418,7 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 
 				vehicle.iColor1 = -1;
 				vehicle.iColor2 = -1;
-				vehicle.ucPaintjob = 4;
+				vehicle.ucPaintjob = 3;
 				memset(vehicle.iUpgrades, 0, sizeof(vehicle.iUpgrades));
 				vehicle.szPlate[0] = NULL;
 				vehicle.byteInterior = 0;
@@ -610,7 +610,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	{
 		for (auto v : map->second->vectorVehicles)
 		{
-			if (!(flags & ONLY_CREATE_VEHICLE) && (v->byteInterior || v->iWorld || v->ucPaintjob < 4 || v->iUpgrades[0]))
+			if (!(flags & ONLY_CREATE_VEHICLE) && (v->byteInterior || v->iWorld || v->ucPaintjob < 3 || v->iUpgrades[0]))
 			{
 				fputs("\n\tnew tempvehid; \n\n", pfOut);
 				break;
@@ -687,7 +687,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		fputs("\n\t/*--------------------------------------------------Vehicles -------------------------------------------------*/\n", pfOut);
 		for(auto v : map->second->vectorVehicles)
 		{
-			if(flags & ONLY_CREATE_VEHICLE || (!v->byteInterior && !v->iWorld && v->ucPaintjob > 3 && !v->iUpgrades[0]))
+			if(flags & ONLY_CREATE_VEHICLE || (!v->byteInterior && !v->iWorld && v->ucPaintjob > 2 && !v->iUpgrades[0]))
 			{
 				sprintf(szLine, "\tCreateVehicle(%d, %f, %f, %f, %f, %d, %d, -1);", v->wModelID, v->vecPos.fX, v->vecPos.fY, v->vecPos.fZ,
 					v->fAngle, v->iColor1, v->iColor2);
@@ -719,7 +719,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 					fputs(szLine, pfOut);					
 				}
 
-				if(v->ucPaintjob < 4)
+				if(v->ucPaintjob < 3)
 				{
 					sprintf(szLine, "\tChangeVehiclePaintjob(tempvehid, %d);\n", v->ucPaintjob);
 					fputs(szLine, pfOut);					
@@ -734,10 +734,10 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 					fputs(szLine, pfOut);
 					for (BYTE i = 0; i != 14; i++)
 					{
-						if (!v->iUpgrades[0]) continue;
+						if (!v->iUpgrades[i]) continue;
 
 						if (i == 13)
-							sprintf(szLine, "%d);", v->iUpgrades[i]);
+							sprintf(szLine, "%d);\n", v->iUpgrades[i]);
 						else
 							sprintf(szLine, "%d, ", v->iUpgrades[i]);
 						
