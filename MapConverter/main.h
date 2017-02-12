@@ -1,3 +1,5 @@
+#pragma once
+
 // Internal includes
 #include <stdio.h>
 #include <iostream>

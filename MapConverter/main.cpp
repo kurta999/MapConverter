@@ -1,7 +1,5 @@
-// Converter.cpp : Defines the exported functions for the DLL application.
-//
-
 #include "main.h"
+#include "CMapConverter.h"
 
 logprintf_t logprintf;
 extern void *pAMXFunctions;

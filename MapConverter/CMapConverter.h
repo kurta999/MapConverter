@@ -1,5 +1,4 @@
-#ifndef CCONVERTER_H
-#define CCONVERTER_H
+#pragma once
 
 #include "CVector.h"
 #include "CSingleton.h"
@@ -8,6 +7,14 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+
+#ifndef _WIN32
+typedef unsigned long       DWORD;
+typedef int                 BOOL;
+typedef unsigned char       BYTE;
+typedef unsigned short      WORD;
+typedef float               FLOAT;
+#endif
 
 struct object_t
 {
@@ -49,8 +56,6 @@ struct vehicle_t
 	std::string strName;
 	int extraID;
 };
-
-
 
 struct marker_t
 {
@@ -192,5 +197,3 @@ private:
 	std::unordered_map<int, CMap*> maps;
 	std::unordered_map<std::string, int> mapNames;
 };
-
-#endif

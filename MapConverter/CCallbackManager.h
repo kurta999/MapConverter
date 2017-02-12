@@ -1,5 +1,4 @@
-#ifndef CCALLBACKMANAGER_H
-#define CCALLBACKMANAGER_H
+#pragma once
 
 #include <set>
 #include "CMapConverter.h"
@@ -31,4 +30,3 @@ public:
 
 	static std::set<AMX *>		m_listAMX;
 };
-#endif

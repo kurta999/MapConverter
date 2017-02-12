@@ -2,6 +2,7 @@
 #include <thread>
 #include <sstream>
 #include <iomanip>
+#include <string.h> 
 
 extern logprintf_t logprintf;
 extern CConverter *pConverter;

@@ -9,8 +9,7 @@
 *
 *****************************************************************************/
 
-#ifndef __CVector_H
-#define __CVector_H
+#pragma once
 
 #ifdef WIN32
 #include <windows.h>
@@ -232,5 +231,3 @@ public:
 CVector const g_vecFrontNormal ( 1.0f, 0.0f, 0.0f );
 CVector const g_vecRightNormal ( 0.0f, 1.0f, 0.0f );
 CVector const g_vecUpNormal ( 0.0f, 0.0f, 1.0f );
-
-#endif
