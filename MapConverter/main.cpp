@@ -84,7 +84,7 @@ AMX_NATIVE_INFO PluginNatives[] =
 	{"MC_GetIDFromName",n_MC_GetIDFromName },
 	{0, 0}
 };
-
+ 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad( AMX *amx ) 
 {
 	// Register the AMX
