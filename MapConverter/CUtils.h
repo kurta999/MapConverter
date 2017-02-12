@@ -6,9 +6,9 @@ class CUtils
 {
 public:
 	static BYTE GetPaletteIndexFromRGB ( BYTE from_r, BYTE from_g, BYTE from_b );
-	static float CUtils::RadToDeg(float radians);
-	static WORD CUtils::GetWeaponModel(int weaponid);
-	const char* CUtils::GetWeaponName(BYTE iWeaponID);
+	static float RadToDeg(float radians);
+	static WORD GetWeaponModel(int weaponid);
+	const char* GetWeaponName(BYTE iWeaponID);
 };
 
 int set_amxstring(AMX *amx, cell amx_addr, const char *source, int max);

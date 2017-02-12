@@ -9,6 +9,9 @@ extern CConverter *pConverter;
 
 void StartPawnCompiler(std::string str);
 
+#ifndef MAX_PATH
+#define MAX_PATH 260
+#endif
 CConverter::CConverter()
 {
 	mapUpperID = 1;
@@ -973,7 +976,7 @@ std::string* CConverter::GetMTAMapName(int mapID)
 	return &map->second->mapName;
 }
 
-int CConverter::GetMapIDFromName(std::string &strMap)
+int CConverter::GetMapIDFromName(std::string const &strMap)
 {
 	std::unordered_map<std::string, int>::iterator it = mapNames.find(strMap);
 	if(it == mapNames.end())

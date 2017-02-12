@@ -18,7 +18,7 @@ typedef float               FLOAT;
 
 struct object_t
 {
-	object_t::object_t() : extraID(0) { }
+	object_t() : extraID(0) { }
 
 	WORD wModelID;
 	CVector vecPos;
@@ -32,7 +32,7 @@ struct object_t
 
 struct removeobject_t
 {
-	removeobject_t::removeobject_t() : extraID(0) { }
+	removeobject_t() : extraID(0) { }
 
 	WORD wModelID;
 	CVector vecPos;
@@ -42,7 +42,7 @@ struct removeobject_t
 
 struct vehicle_t
 {
-	vehicle_t::vehicle_t() : extraID(0) { }
+	vehicle_t() : extraID(0) { }
 
 	WORD wModelID;
 	CVector vecPos;
@@ -59,7 +59,7 @@ struct vehicle_t
 
 struct marker_t
 {
-	marker_t::marker_t() : extraID(0) { }
+	marker_t() : extraID(0) { }
 
 	enum class MarkerType : BYTE
 	{
@@ -82,7 +82,7 @@ struct marker_t
 
 struct pickup_t
 {
-	pickup_t::pickup_t() : extraID(0), byteInterior(0) { }
+	pickup_t() : extraID(0), byteInterior(0) { }
 
 	WORD wModelID;
 	CVector vecPos;
@@ -94,7 +94,7 @@ struct pickup_t
 
 struct ped_t
 {
-	ped_t::ped_t() : extraID(0), byteInterior(0) { }
+	ped_t() : extraID(0), byteInterior(0) { }
 
 	WORD wModelID;
 	CVector vecPos;
@@ -123,43 +123,43 @@ enum ESavingFlags : BYTE
 class CMap
 {
 public:
-	CMap::CMap(std::string const &name)
+	CMap(std::string const &name)
 	{
 		mapName = name;
 	}
 	
-	CMap::CMap(std::string const &name, EMapType maptype) :
+	CMap(std::string const &name, EMapType maptype) :
 		mapType(mapType)
 	{
 		mapName = name;
 	}
 
-	inline void CMap::Insert(object_t *object)
+	inline void Insert(object_t *object)
 	{
 		vectorObjects.push_back(object);
 	}
 
-	inline void CMap::Insert(removeobject_t *object)
+	inline void Insert(removeobject_t *object)
 	{		
 		vectorRemoveObjects.push_back(object);
 	}
 
-	inline void CMap::Insert(vehicle_t *object)
+	inline void Insert(vehicle_t *object)
 	{		
 		vectorVehicles.push_back(object);
 	}
 
-	inline void CMap::Insert(marker_t *object)
+	inline void Insert(marker_t *object)
 	{		
 		vectorMarkers.push_back(object);
 	}
 
-	inline void CMap::Insert(pickup_t *object)
+	inline void Insert(pickup_t *object)
 	{		
 		vectorPickups.push_back(object);
 	}
 
-	inline void CMap::Insert(ped_t *object)
+	inline void Insert(ped_t *object)
 	{
 		vectorPeds.push_back(object);
 	}
@@ -186,12 +186,12 @@ public:
 	bool UnLoadMTAMap(int mapID, bool callPawnFunctions);
 	bool SaveMTAMap(int mapID, ESavingFlags flags);
 	std::string *GetMTAMapName(int mapID);
-	int GetMapIDFromName(std::string &strMap);
+	int GetMapIDFromName(std::string const &strMap);
 
 private:
 	int LoadMapMTA(std::string const &strPath, bool callPawnFunctions);
 	int LoadMapIPL(std::string const &strPath, bool callPawnFunctions);
-	const char *CConverter::GetCommect(std::string const &szFromComment, ESavingFlags flags);
+	const char *GetCommect(std::string const &szFromComment, ESavingFlags flags);
 
 	int mapUpperID;
 	std::unordered_map<int, CMap*> maps;
