@@ -1,12 +1,11 @@
 //----------------------------------------------------------
 //
-//   SA:MP Multiplayer Modification For GTA:SA
-//   Copyright 2004-2006 SA:MP Team
+//   SA-MP Multiplayer Modification For GTA:SA
+//   Copyright 2004-2009 SA-MP Team
 //
 //----------------------------------------------------------
 
-#ifndef _PLUGINCOMMON_H_INCLUDED
-#define _PLUGINCOMMON_H_INCLUDED
+#pragma once
 
 //----------------------------------------------------------
 
@@ -20,7 +19,7 @@
   #define PLUGIN_EXTERN_C 
 #endif
 
-#if defined(LINUX) || defined(FREEBSD) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined __linux__ || defined __FreeBSD__ || defined __OpenBSD__
   #ifndef __GNUC__
     #pragma message "Warning: Not using a GNU compiler."
   #endif
@@ -31,23 +30,24 @@
   #else
     #define PLUGIN_EXPORT PLUGIN_EXTERN_C 
   #endif
-#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+#elif defined _WIN32
   #ifndef _MSC_VER
     #pragma message "Warning: Not using a VC++ compiler."
   #endif
   #define PLUGIN_CALL __stdcall
   #define PLUGIN_EXPORT PLUGIN_EXTERN_C
 #else
-  #error "You must define one of WIN32, LINUX or FREEBSD"
+  #error "Unknown operating system."
 #endif
 
 //----------------------------------------------------------
-;
+
 enum SUPPORTS_FLAGS 
 {
 	SUPPORTS_VERSION		= SAMP_PLUGIN_VERSION,
 	SUPPORTS_VERSION_MASK	= 0xffff,
 	SUPPORTS_AMX_NATIVES	= 0x10000,
+	SUPPORTS_PROCESS_TICK	= 0x20000
 };
 
 //----------------------------------------------------------
@@ -56,6 +56,11 @@ enum PLUGIN_DATA_TYPE
 {
 	// For some debugging
 	PLUGIN_DATA_LOGPRINTF		= 0x00,	// void (*logprintf)(char* format, ...)
+	PLUGIN_DATA_NETGAME			= 0xE1,	// CNetGame* GetNetGame();
+	PLUGIN_DATA_RAKSERVER		= 0xE2, // RakServerInterface* PluginGetRakServer()
+	PLUGIN_DATA_LOADFSCRIPT		= 0xE3, // bool LoadFilterscriptFromMemory(char* pFileName, char* pFileData)
+	PLUGIN_DATA_UNLOADFSCRIPT	= 0xE5, // bool UnloadFilterScript(char* pFileName)
+	PLUGIN_DATA_CONSOLE			= 0xE4, // CConsole* GetConsole();
 
 	// AMX
 	PLUGIN_DATA_AMX_EXPORTS		= 0x10,	// void* AmxFunctionTable[]    (see PLUGIN_AMX_EXPORT)
@@ -113,10 +118,6 @@ enum PLUGIN_AMX_EXPORT
 	PLUGIN_AMX_EXPORT_UTF8Len		= 42,
 	PLUGIN_AMX_EXPORT_UTF8Put		= 43,
 };
-
-//----------------------------------------------------------
-
-#endif // _PLUGINCOMMON_H_INCLUDED
 
 //----------------------------------------------------------
 // EOF

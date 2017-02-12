@@ -1,7 +1,7 @@
 //----------------------------------------------------------
 //
-//   SA:MP Multiplayer Modification For GTA:SA
-//   Copyright 2004-2006 SA:MP Team
+//   SA-MP Multiplayer Modification For GTA:SA
+//   Copyright 2004-2009 SA-MP Team
 //
 //----------------------------------------------------------
 
