@@ -1,7 +1,7 @@
 #ifndef _CUTILS_H
 #define _CUTILS_H
 
-#include "SDK/plugin.h"
+#include "../lib/SDK/plugin.h"
 
 class CUtils
 {
@@ -14,5 +14,6 @@ public:
 
 int set_amxstring(AMX *amx, cell amx_addr, const char *source, int max);
 bool IsNumeric(const std::string& input);
+bool fexists(const std::string& filename);
 
 #endif

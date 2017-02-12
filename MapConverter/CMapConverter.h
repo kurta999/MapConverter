@@ -118,11 +118,17 @@ enum ESavingFlags : BYTE
 class CMap
 {
 public:
-	CMap::CMap(std::string name)
+	CMap::CMap(std::string const &name)
 	{
 		mapName = name;
 	}
 	
+	CMap::CMap(std::string const &name, EMapType maptype) :
+		mapType(mapType)
+	{
+		mapName = name;
+	}
+
 	inline void CMap::Insert(object_t *object)
 	{
 		vectorObjects.push_back(object);
@@ -170,9 +176,7 @@ public:
 	CConverter();
 	~CConverter();
 	
-	int LoadAllMTAMap(bool callPawnFunctions);
-	int LoadMTAMap(std::string &strPath, bool callPawnFunctions);
-	int LoadIPL(std::string &strPath, bool callPawnFunctions);
+	int LoadMap(std::string const &strPath, bool callPawnFunctions);
 	bool IsValidMTAMap(int mapID);
 	bool UnLoadMTAMap(int mapID, bool callPawnFunctions);
 	bool SaveMTAMap(int mapID, ESavingFlags flags);
@@ -180,7 +184,8 @@ public:
 	int GetMapIDFromName(std::string &strMap);
 
 private:
-	void ConvertMTAMap(char);
+	int LoadMapMTA(std::string const &strPath, bool callPawnFunctions);
+	int LoadMapIPL(std::string const &strPath, bool callPawnFunctions);
 	const char *CConverter::GetCommect(std::string const &szFromComment, ESavingFlags flags);
 
 	int mapUpperID;

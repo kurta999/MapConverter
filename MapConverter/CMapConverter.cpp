@@ -88,33 +88,65 @@ int clampAngle(int angle)
 	return (angle % 360) + (angle < 0 ? 360 : 0);
 }
 
-int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
-{		
+int CConverter::LoadMap(std::string const &strName, bool callPawnFunctions)
+{
+	// Find the filetype
+	size_t pos = strName.find_last_of(".");
+	if (pos != std::string::npos)
+	{
+		++pos;
+		
+		// If map already exists with the specified name
+		if (mapNames.find(strName) != mapNames.end())
+			return false;
+
+		// If map doesn't exists
+		if (!fexists("scriptfiles/maps/MTA/" + strName)) return 0;
+
+		if (strName.substr(pos) == "map")
+		{
+			LoadMapMTA(strName, callPawnFunctions);
+		}
+		else if (strName.substr(pos) == "ipl")
+		{
+			LoadMapIPL(strName, callPawnFunctions);
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		if (fexists("scriptfiles/maps/MTA/" + strName + ".map"))
+		{
+			LoadMapMTA(strName + ".map", callPawnFunctions);
+		}
+		else if (fexists("scriptfiles/maps/MTA/" + strName + ".ipl"))
+		{
+			LoadMapIPL(strName + "ipl", callPawnFunctions);
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	return 1;
+}
+
+int CConverter::LoadMapMTA(std::string const &strName, bool callPawnFunctions)
+{
 	// Map object
 	CMap* pMap = NULL;
 	int id = mapUpperID++;
 
-	// Remove file type from the end of filename
-	size_t pos = strName.find_last_of(".");
-	if(pos != std::string::npos)
-	{
-		if(strName.substr(pos + 1) == "map")
-		{
-			strName.erase(pos, 4);
-		}
-	}
-	
-	// If map already exists with specified name
-	if (mapNames.find(strName) != mapNames.end())
-		return false;
-
-	pMap = new CMap(strName);	
+	pMap = new CMap(strName);
 	maps.emplace(id, pMap);
 	mapNames.emplace(strName, id);
 
 	char szPath[MAX_PATH];
-	sprintf(szPath, "scriptfiles\\maps\\MTA\\%s.map", strName.c_str());
-	
+	sprintf(szPath, "scriptfiles/maps/MTA/%s", strName.c_str());
+
 	// Load the map file
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_file(szPath);
@@ -124,8 +156,6 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 	const pugi::xml_node &mapNode = doc.child("map");
 	if(mapNode.attribute("edf:definitions").value()[0] || !strcmp(mapNode.attribute("mod").value(), "deathmatch"))
 	{
-		//logprintf("mta dm map");
-
 		pMap->mapType = MTA_DM;
 		CCallbackManager::OnMapLoadingStart(id, pMap, callPawnFunctions);
 
@@ -488,46 +518,24 @@ int CConverter::LoadMTAMap(std::string &strName, bool callPawnFunctions)
 }
 
 // TODO - Fix rotations
-int CConverter::LoadIPL(std::string &strName, bool callPawnFunctions)
+int CConverter::LoadMapIPL(std::string const &strName, bool callPawnFunctions)
 {
 	// 17512, LODgwforum1_LAe, 0, 2737.75, -1760.0625, 26.2265625, 0, 0, -8.742277657e-008, 1, -1
-	// Map object
 	CMap* pMap = NULL;
-	int id;
-	// Remove file type from the end of filename
-	size_t pos = strName.find_last_of(".");
-	if(pos != std::string::npos)
-	{
-		std::string ext = strName.substr(pos + 1);
-		if(ext == "ipl")
-		{
-			strName.erase(pos, 4);
-		}
-	}
-	
-	// If map isn't loaded
-	if(mapNames.find(strName) == mapNames.end())
-	{
-		pMap = new CMap(strName);		
-		maps.emplace(mapUpperID, pMap);
-		mapNames.emplace(strName, mapUpperID);
+	int id = mapUpperID++;
 
-		id = mapUpperID++;
-	}
-	else
-	{
-		return false;
-	}
+	pMap = new CMap(strName);
+	maps.emplace(id, pMap);
+	mapNames.emplace(strName, id);
+
+	char szPath[MAX_PATH];
+	sprintf(szPath, "scriptfiles/maps/MTA/%s", strName.c_str());
 
 	pMap->mapType = GTA_IPL;
 	CCallbackManager::OnMapLoadingStart(id, pMap, callPawnFunctions);
 
 	std::ifstream t;
-	char szPath2[MAX_PATH];
-	sprintf(szPath2, "scriptfiles\\maps\\MTA\\%s.ipl", strName.c_str());
-	logprintf(szPath2);
-
-	t.open(szPath2);
+	t.open(szPath);
 	std::string buffer;
 	std::string line;
 	while(t)
@@ -649,7 +657,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		return false;
 
 	char szDir[MAX_PATH];
-	sprintf(szDir, "scriptfiles\\maps\\SAMP\\%s.pwn", map->second->mapName.c_str());
+	sprintf(szDir, "scriptfiles/maps/SAMP/%s.pwn", map->second->mapName.c_str());
 	
 	FILE *pfOut = fopen(szDir, "w");
 	char szLine[256];

@@ -18,17 +18,26 @@
     <Filter Include="Lib\SDK">
       <UniqueIdentifier>{c47d2fa7-3126-4893-893e-34de13c7cfc9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Lib\SDK\amx">
+      <UniqueIdentifier>{0a62a8bf-6cfb-40c0-bf94-9ad771b40058}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sampsvr_files">
+      <UniqueIdentifier>{6960c332-6714-4bf9-9796-1b8c06fc14ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sampsvr_files\filterscripts">
+      <UniqueIdentifier>{b972df03-cb83-4701-bda7-707d830e4a1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sampsvr_files\pawno">
+      <UniqueIdentifier>{9ef1d749-2a9a-4832-a344-6616c49739f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sampsvr_files\pawno\include">
+      <UniqueIdentifier>{bedc7d14-147c-45ee-817e-4ddd293c043f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SDK\plugincommon.h">
-      <Filter>Lib\SDK</Filter>
-    </ClInclude>
-    <ClInclude Include="SDK\plugin.h">
-      <Filter>Lib\SDK</Filter>
-    </ClInclude>
     <ClInclude Include="CVector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -36,9 +45,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CConverter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="main.h">
@@ -53,18 +59,30 @@
     <ClInclude Include="..\lib\pugixml\pugixml.hpp">
       <Filter>Lib\PugiXML</Filter>
     </ClInclude>
+    <ClInclude Include="CMapConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\SDK\plugin.h">
+      <Filter>Lib\SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\SDK\plugincommon.h">
+      <Filter>Lib\SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\SDK\amx\amx.h">
+      <Filter>Lib\SDK\amx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\SDK\amx\getch.h">
+      <Filter>Lib\SDK\amx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\SDK\amx\sclinux.h">
+      <Filter>Lib\SDK\amx</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SDK\amxplugin.cpp">
-      <Filter>Lib\SDK</Filter>
-    </ClCompile>
     <ClCompile Include="CCallbackManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CConverter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\lib\pugixml\pugixml.cpp">
@@ -73,10 +91,25 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CMapConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lib\SDK\amxplugin.cpp">
+      <Filter>Lib\SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lib\SDK\amx\getch.c">
+      <Filter>Lib\SDK\amx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Converter.def">
+    <None Include="MapConverter.def">
       <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\sampsvr_files\filterscripts\MapConverter.pwn">
+      <Filter>sampsvr_files\filterscripts</Filter>
+    </None>
+    <None Include="..\sampsvr_files\pawno\include\MapConverter.inc">
+      <Filter>sampsvr_files\pawno\include</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -263,3 +263,13 @@ bool IsNumeric(const std::string& input)
 {
 	return std::all_of(input.begin(), input.end(), ::isdigit);
 }
+
+bool fexists(const std::string& filename) 
+{
+	logprintf("fff: %s", filename.c_str());
+	std::ifstream ifile(filename.c_str());
+	bool ret = ifile.is_open();
+	if (ret)
+		ifile.close();
+	return ret;
+}

@@ -6,47 +6,51 @@
 logprintf_t logprintf;
 extern void *pAMXFunctions;
 
-// native LoadMTAMap(const mapname[], callPawnFunctions);
-cell AMX_NATIVE_CALL n_LoadMTAMap(AMX* amx, cell* params)
+// native MC_LoadMap(const mapname[], callPawnFunctions);
+cell AMX_NATIVE_CALL n_MC_LoadMap(AMX* amx, cell* params)
 {
 	char *szName;
 	amx_StrParam(amx, params[1], szName);
 
-    return CConverter::Get()->LoadMTAMap(std::string(szName), static_cast<int>(params[2]) != 0);
+    int ret = CConverter::Get()->LoadMap(std::string(szName), static_cast<int>(params[2]) != 0);
+	SAFE_DELETE(szName);
+	return ret;
 }
 
-// native IsValidMTAMap(mapid);
-cell AMX_NATIVE_CALL n_IsValidMTAMap(AMX* amx, cell* params)
+// native MC_IsValidMap(mapid);
+cell AMX_NATIVE_CALL n_MC_IsValidMap(AMX* amx, cell* params)
 {
 	return CConverter::Get()->IsValidMTAMap(static_cast<int>(params[1]));
 }
 
-// native UnLoadMTAMap(const mapname[]);
-cell AMX_NATIVE_CALL n_UnLoadMTAMap(AMX* amx, cell* params)
+// native MC_UnloadMap(const mapname[]);
+cell AMX_NATIVE_CALL n_MC_UnloadMap(AMX* amx, cell* params)
 {
 	return CConverter::Get()->UnLoadMTAMap(static_cast<int>(params[1]), static_cast<int>(params[2]) != 0);
 }
 
-// native SaveMTAMap(mapid, ConvertingFlags:flags);
-cell AMX_NATIVE_CALL n_SaveMTAMap(AMX* amx, cell* params)
+// native MC_SaveMap(mapid, ConvertingFlags:flags);
+cell AMX_NATIVE_CALL n_MC_SaveMap(AMX* amx, cell* params)
 {
 	return CConverter::Get()->SaveMTAMap(static_cast<int>(params[1]), static_cast<ESavingFlags>(params[2]));
 }
 
-// native GetMTAMapName(mapid, name[], len = sizeof(name));
-cell AMX_NATIVE_CALL n_GetMTAMapName(AMX* amx, cell* params)
+// native MC_GetMapName(mapid, name[], len = sizeof(name));
+cell AMX_NATIVE_CALL n_MC_GetMapName(AMX* amx, cell* params)
 {	
 	std::string strMapName = *CConverter::Get()->GetMTAMapName(static_cast<int>(params[1]));
 	return set_amxstring(amx, params[2], strMapName.c_str(), params[3]);
 }
 
-// native GetMapIDFromName(const mapname[]);
-cell AMX_NATIVE_CALL n_GetMapIDFromName(AMX* amx, cell* params)
+// native MC_GetIDFromName(const mapname[]);
+cell AMX_NATIVE_CALL n_MC_GetIDFromName(AMX* amx, cell* params)
 {	
 	char *szName;
 	amx_StrParam(amx, params[1], szName);
 
-	return CConverter::Get()->GetMapIDFromName(std::string(szName));
+	int ret = CConverter::Get()->GetMapIDFromName(std::string(szName));
+	SAFE_DELETE(szName);
+	return ret;
 }
 
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports() 
@@ -59,7 +63,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
     pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
     logprintf = (logprintf_t) ppData[PLUGIN_DATA_LOGPRINTF];
 	
-    logprintf("*** MTA Map Converter v3.0 loaded, by kurta999");
+    logprintf("*** Map Converter v3.0 loaded, made by kurta999");
     return true;
 }
 
@@ -67,17 +71,17 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 {
 	CConverter::CSingleton::Destroy();
 
-	logprintf("*** MTA Map Converter v3.0 unloaded, by kurta999");
+	logprintf("*** Map Converter v3.0, by kurta999");
 }
 
 AMX_NATIVE_INFO PluginNatives[] =
 {
-	{"LoadMTAMap",		n_LoadMTAMap},
-	{"IsValidMTAMap",	n_IsValidMTAMap},
-	{"UnLoadMTAMap",	n_UnLoadMTAMap},
-	{"SaveMTAMap",		n_SaveMTAMap},
-	{"GetMTAMapName",	n_GetMTAMapName},
-	{"GetMapIDFromName",n_GetMapIDFromName},	
+	{"MC_LoadMap",		n_MC_LoadMap },
+	{"MC_IsValidMap",	n_MC_IsValidMap },
+	{"MC_UnloadMap",	n_MC_UnloadMap },
+	{"MC_SaveMap",		n_MC_SaveMap },
+	{"MC_GetMapName",	n_MC_GetMapName },
+	{"MC_GetIDFromName",n_MC_GetIDFromName },
 	{0, 0}
 };
 

@@ -6,16 +6,16 @@
 
 // Project files
 #include "CCallbackManager.h"
-#include "CConverter.h"
+#include "CMapConverter.h"
 #include "CUtils.h"
 #include "CVector.h"
 #include "CSingleton.h"
 
 // SAMP SDK
-#include "SDK/plugin.h"
+#include "../lib/SDK/plugin.h"
 
 // PUGI XML
-#include "pugixml.hpp"
+#include "../lib/pugixml/pugixml.hpp"
 
 typedef void (*logprintf_t)(char* format, ...);
 

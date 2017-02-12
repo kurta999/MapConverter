@@ -1,8 +1,8 @@
-#if defined _converter_included
+#if defined _MapConverter_included
 	#endinput
 #endif
-#define _converter_included
-#pragma library converter
+#define _MapConverter_included
+#pragma library MapConverter
 
 // MTA -> SAMP Map Converter v3.0 by kurta999
 
@@ -30,12 +30,12 @@ enum E_MarkerType
 	RING
 };
 
-native LoadMTAMap(const mapname[], callPawnFunctions);
-native IsValidMTAMap(mapid);
-native UnLoadMTAMap(const mapname[]);
-native SaveMTAMap(mapid, E_SavingFlags:flags);
-native GetMTAMapName(mapid, name[], len = sizeof(name));
-native GetMapIDFromName(const mapname[]);
+native MC_LoadMap(const mapname[], callPawnFunctions);
+native MC_IsValidMap(mapid);
+native MC_UnloadMap(const mapname[]);
+native MC_SaveMap(mapid, E_SavingFlags:flags);
+native MC_GetMapName(mapid, name[], len = sizeof(name));
+native MC_GetIDFromName(const mapname[]);
 
 
 forward OnMapLoadingStart(mapid, mapname[], EMapType:maptype, callPawnFunctions);
@@ -49,7 +49,7 @@ forward OnVehicleDataLoaded(mapid, modelid, Float:fX, Float:fY, Float:fZ, Float:
 forward OnVehicleDataUnLoaded(mapid, extraid);
 forward OnMarkerDataLoaded(mapid, E_MarkerType:type, Float:fX, Float:fY, Float:fZ, Float:fSize, interior, virtualworld);
 forward OnMarkerDataUnLoaded(mapid, extraid);
-forward OnPickupDataUnLoaded(mapid, modelid, Float:fX, Float:fY, Float:fZ, virtualworld);
+forward OnPickupDataLoaded(mapid, modelid, Float:fX, Float:fY, Float:fZ, virtualworld);
 forward OnPickupDataUnLoaded(mapid, extraid);
 forward OnActorDataLoaded(mapid, modelid, Float:fX, Float:fY, Float:fZ, Float:fAngle, interior, virtualworld);
 forward OnActorDataUnLoaded(mapid, extraid);

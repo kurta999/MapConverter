@@ -2,8 +2,8 @@
 #define CCALLBACKMANAGER_H
 
 #include <set>
-#include "CConverter.h"
-#include "SDK/plugin.h"
+#include "CMapConverter.h"
+#include "../lib/SDK/plugin.h"
 
 class CCallbackManager
 {
