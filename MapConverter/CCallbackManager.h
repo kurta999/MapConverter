@@ -3,7 +3,8 @@
 
 #include <set>
 #include "CMapConverter.h"
-#include "../lib/SDK/plugin.h"
+
+#include <sdk/plugin.h>
 
 class CCallbackManager
 {

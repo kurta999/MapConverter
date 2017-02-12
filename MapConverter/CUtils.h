@@ -1,7 +1,7 @@
 #ifndef _CUTILS_H
 #define _CUTILS_H
 
-#include "../lib/SDK/plugin.h"
+#include <sdk/plugin.h>
 
 class CUtils
 {

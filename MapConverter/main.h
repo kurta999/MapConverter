@@ -12,10 +12,10 @@
 #include "CSingleton.h"
 
 // SAMP SDK
-#include "../lib/SDK/plugin.h"
+#include <sdk/plugin.h>
 
 // PUGI XML
-#include "../lib/pugixml/pugixml.hpp"
+#include <pugixml/pugixml.hpp>
 
 typedef void (*logprintf_t)(char* format, ...);
 
