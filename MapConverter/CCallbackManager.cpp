@@ -1,4 +1,5 @@
 #include "main.h"
+#include <cstring>
 
 // OrMisicL - thx
 std::set<AMX *> CCallbackManager::m_listAMX;
