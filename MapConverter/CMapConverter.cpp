@@ -2,6 +2,7 @@
 #include <thread>
 #include <sstream>
 #include <iomanip>
+#include <cstring>
 #include <string.h> 
 
 extern logprintf_t logprintf;
