@@ -4,6 +4,9 @@
 #include <iomanip>
 #include <cstring>
 #include <string.h> 
+#include <experimental/filesystem>
+
+namespace fs = std::experimental::filesystem;
 
 extern logprintf_t logprintf;
 extern CConverter *pConverter;
@@ -18,84 +21,32 @@ CConverter::CConverter()
 	mapUpperID = 1;
 
 #ifdef _WIN32
-	CreateDirectory("\\scriptfiles\\maps", NULL);
-	CreateDirectory("\\scriptfiles\\maps\\SAMP", NULL);
-	CreateDirectory("\\scriptfiles\\maps\\MTA", NULL);
+	CreateDirectory("scriptfiles/maps", NULL);
+	CreateDirectory("scriptfiles/maps/SAMP", NULL);
+	CreateDirectory("scriptfiles/maps/MTA", NULL);
 #endif
 }
 
-CConverter::~CConverter()
+int CConverter::LoadAllMap(bool callPawnFunctions)
 {
-
-}
-
-typedef struct quat_s
-{
-    double w;
-    double x;
-    double y;
-    double z;
-} quat_t;
-
-#define pi 3.14159265
-#define round(a) ((floor(a)+0.5)<a?ceil(a):floor(a))
-#define clamp(a, lo, hi) (a > hi ? hi : (a < lo ? lo : a) )
-
-// Yup2...
-inline double rad2deg(double radian)
-{
-    return radian * (180 / pi);
-}
-
-// Yup...
-void QuatToEuler(const quat_t *quat, double *rotx,  double *roty, double *rotz)
-{
-    double sqw;
-    double sqx;
-    double sqy;
-    double sqz;
-
-    double rotxrad;
-    double rotyrad;
-    double rotzrad;
-
-    sqw = quat->w * quat->w;
-    sqx = quat->x * quat->x;
-    sqy = quat->y * quat->y;
-    sqz = quat->z * quat->z;
-
-    rotxrad = (double)atan2l(2.0 * ( quat->y * quat->z + quat->x * quat->w ) , ( -sqx - sqy + sqz + sqw ));
-    rotyrad = (double)asinl( clamp( -2.0 * ( quat->x * quat->z - quat->y * quat->w ), -1, 1 ));
-    rotzrad = (double)atan2l(2.0 * ( quat->x * quat->y + quat->z * quat->w ) , (  sqx - sqy - sqz + sqw ));
-
-    *rotx = rad2deg(rotxrad);
-    *roty = rad2deg(rotyrad);
-    *rotz = rad2deg(rotzrad);
-
-    if (*rotx < 0)
-        *rotx = round(360 - *rotx);
-
-    *roty = -(*roty);
-
-    if (*roty < 0)
-        *roty = round(360 - *roty);
-
-    if (*rotz < 0)
-        *rotz = round(0 - *rotz);
-    else if (*rotz > 0)
-        *rotz = round(360 - *rotz);
-
-    return;
-}
-
-int clampAngle(int angle)
-{
-	return (angle % 360) + (angle < 0 ? 360 : 0);
+	for (auto p : fs::recursive_directory_iterator("scriptfiles/maps/MTA"))
+	{
+		if (p.path().extension().string() == ".map")
+		{
+			LoadMapMTA(p.path().string(), callPawnFunctions);
+		}
+		else if (p.path().extension().string() == ".ipl")
+		{
+			LoadMapIPL(p.path().string(), callPawnFunctions);
+		}
+	}
+	return 1;
 }
 
 int CConverter::LoadMap(std::string const &strName, bool callPawnFunctions)
 {
 	// Find the filetype
+	int ret;
 	size_t pos = strName.find_last_of(".");
 	if (pos != std::string::npos)
 	{
@@ -110,11 +61,11 @@ int CConverter::LoadMap(std::string const &strName, bool callPawnFunctions)
 
 		if (strName.substr(pos) == "map")
 		{
-			LoadMapMTA(strName, callPawnFunctions);
+			ret = LoadMapMTA(strName, callPawnFunctions);
 		}
 		else if (strName.substr(pos) == "ipl")
 		{
-			LoadMapIPL(strName, callPawnFunctions);
+			ret = LoadMapIPL(strName, callPawnFunctions);
 		}
 		else
 		{
@@ -125,18 +76,18 @@ int CConverter::LoadMap(std::string const &strName, bool callPawnFunctions)
 	{
 		if (fexists("scriptfiles/maps/MTA/" + strName + ".map"))
 		{
-			LoadMapMTA(strName + ".map", callPawnFunctions);
+			ret = LoadMapMTA(strName + ".map", callPawnFunctions);
 		}
 		else if (fexists("scriptfiles/maps/MTA/" + strName + ".ipl"))
 		{
-			LoadMapIPL(strName + "ipl", callPawnFunctions);
+			ret = LoadMapIPL(strName + "ipl", callPawnFunctions);
 		}
 		else
 		{
 			return 0;
 		}
 	}
-	return 1;
+	return ret;
 }
 
 int CConverter::LoadMapMTA(std::string const &strName, bool callPawnFunctions)
@@ -145,12 +96,23 @@ int CConverter::LoadMapMTA(std::string const &strName, bool callPawnFunctions)
 	CMap* pMap = NULL;
 	int id = mapUpperID++;
 
-	pMap = new CMap(strName);
-	maps.emplace(id, pMap);
-	mapNames.emplace(strName, id);
-
+	std::string strMapName;
 	char szPath[MAX_PATH];
-	sprintf(szPath, "scriptfiles/maps/MTA/%s", strName.c_str());
+	if (strName.find_first_of("scriptfiles") != 0)
+	{
+		strMapName = strName;
+		sprintf(szPath, "scriptfiles/maps/MTA/%s", strName.c_str());
+	}
+	else
+	{
+		strMapName = strName.substr(strName.find_last_of("\\") + 1, strName.length());
+		strcpy(szPath, strName.c_str());
+	}
+	//logprintf("path: %s, mapname: %s, id %d", szPath, strMapName.c_str(), mapUpperID);
+
+	pMap = new CMap(strMapName);
+	maps.emplace(id, pMap);
+	mapNames.emplace(strMapName, id);
 
 	// Load the map file
 	pugi::xml_document doc;
@@ -529,64 +491,76 @@ int CConverter::LoadMapIPL(std::string const &strName, bool callPawnFunctions)
 	CMap* pMap = NULL;
 	int id = mapUpperID++;
 
-	pMap = new CMap(strName);
-	maps.emplace(id, pMap);
-	mapNames.emplace(strName, id);
-
+	std::string strMapName;
 	char szPath[MAX_PATH];
-	sprintf(szPath, "scriptfiles/maps/MTA/%s", strName.c_str());
+	if (strName.find_first_of("scriptfiles") != 0)
+	{
+		strMapName = strName;
+		sprintf(szPath, "scriptfiles/maps/MTA/%s", strName.c_str());
+	}
+	else
+	{
+		strMapName = strName.substr(strName.find_last_of("\\") + 1, strName.length());
+		strcpy(szPath, strName.c_str());
+	}
+	//logprintf("patch: %s, mapname: %s, id %d", szPath, strMapName.c_str(), mapUpperID);
+
+	pMap = new CMap(strMapName);
+	maps.emplace(id, pMap);
+	mapNames.emplace(strMapName, id);
 
 	pMap->mapType = GTA_IPL;
 	CCallbackManager::OnMapLoadingStart(id, pMap, callPawnFunctions);
 
-	std::ifstream t;
-	t.open(szPath);
-	std::string buffer;
+	std::ifstream IPLFile(szPath);
 	std::string line;
-	while(t)
+
+	bool bInst;
+	while(std::getline(IPLFile, line))
 	{
-		std::getline(t, line);
-		int modelid;
-		char szName[64];
-		int interior;
-		CVector vecPos;
-		quat_t quat;
-		int lod;
-		//logprintf((char*)line.c_str());
-		if(sscanf(line.c_str(), "%d, %s %d, %f, %f, %f, %lf, %lf, %lf, %lf, %d", &modelid, &szName, &interior, &vecPos.fX, &vecPos.fY, &vecPos.fZ, 
-			&quat.x, &quat.y, &quat.z, &quat.w, &lod))
+		if (line == "inst")
+			bInst = true;
+
+		if (bInst)
 		{
-			logprintf("%d, %s %d, %f, %f, %f, %lf, %lf, %lf, %lf, %d", modelid, szName, interior, vecPos.fX, vecPos.fY, vecPos.fZ, 
-			quat.w, quat.x, quat.y, quat.z, lod);
+			if (line == "end")
+				bInst = false;
+		}
 
-			double rotX, rotY, rotZ;
-			QuatToEuler(&quat, &rotX, &rotY, &rotZ);
+		if(bInst)
+		{
+			int modelid;
+			char szName[64];
+			int interior;
+			CVector vecPos;
+			quat_t quat;
+			int lod;
 
-			object_t* object = new object_t;
-			object->wModelID = modelid;
-			object->vecPos = vecPos;
-			object->vecRot.fX = (float)clampAngle(static_cast<int>(rotX));
-			object->vecRot.fY = (float)clampAngle(static_cast<int>(rotY));
-			object->vecRot.fZ = (float)clampAngle(static_cast<int>(rotZ));
-			object->byteInterior = interior;
-			object->iWorld = 0;
-			object->ucAlpha = 0xFF;
+			if(sscanf(line.c_str(), "%d, %s %d, %f, %f, %f, %lf, %lf, %lf, %lf, %d", &modelid, &szName, &interior, &vecPos.fX, &vecPos.fY, &vecPos.fZ, 
+				&quat.x, &quat.y, &quat.z, &quat.w, &lod))
+			{
+				//logprintf("%d, %s %d, %f, %f, %f, %lf, %lf, %lf, %lf, %d", modelid, szName, interior, vecPos.fX, vecPos.fY, vecPos.fZ, 
+				//			quat.x, quat.y, quat.z, quat.w, lod);
 
-			// Call our own callback
-			if (callPawnFunctions)
-				CCallbackManager::OnObjectDataLoaded(id, object);
+				object_t* object = new object_t;
+				object->wModelID = modelid;
+				object->vecPos = vecPos;
+				CUtils::QuatToEuler(quat, object->vecRot);
+				object->byteInterior = interior;
+				object->iWorld = 0;
+				object->ucAlpha = 0xFF;
 
-			pMap->Insert(object);
+				// Call our own callback
+				if (callPawnFunctions)
+					CCallbackManager::OnObjectDataLoaded(id, object);
+
+				pMap->Insert(object);
+			}
 		}
 	}
 	CCallbackManager::OnMapLoadingFinish(id, pMap, callPawnFunctions, pMap->vectorObjects.size(), 0, 0, 0, 0, 0);
-	t.close();
+	IPLFile.close();
 	return true;
-}
-
-bool CConverter::IsValidMTAMap(int mapID)
-{
-	return maps.find(mapID) != maps.end();
 }
 
 bool CConverter::UnLoadMTAMap(int mapID, bool callPawnFunctions)
@@ -662,8 +636,10 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		return false;
 
 	char szDir[MAX_PATH];
-	sprintf(szDir, "scriptfiles/maps/SAMP/%s.pwn", map->second->mapName.c_str());
-	
+	std::string strExt = map->second->mapName.erase(map->second->mapName.length() - 4);
+	sprintf(szDir, "scriptfiles/maps/SAMP/%s.pwn", strExt.c_str());
+	//logprintf("savedir: %s", strExt.c_str());
+
 	FILE *pfOut = fopen(szDir, "w");
 	char szLine[256];
 	char szHelp[32];
@@ -942,6 +918,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	sprintf(szCommandLine, ".\\pawno\\pawncc.exe %s\\scriptfiles\\maps\\SAMP\\%s.pwn", szLocation, map->second->mapName.c_str());
 	std::string cmd = szCommandLine;
 
+	C:\Users\Ati\Desktop\SERVER\pawno\pawncc.exe C:\Users\Ati\Desktop\tesztszerver\filterscripts\MapConverter.pwn
 	std::thread t1 (StartPawnCompiler, cmd);
 	t1.detach();
 	*/
@@ -951,7 +928,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	if(bVehicleUpgrades)
 		fputs("\n\nstock AddVehicleComponentInline(vehicleid, ...)\n{\n\tfor (new i = 0, j = numargs(); i != j; ++i)\n\t\tAddVehicleComponent(vehicleid, getarg(i));\n}", pfOut);
 	
-	logprintf("-> %d : %s.map", map->first, map->second->mapName.c_str());
+	logprintf("-> %d : %s", map->first, map->second->mapName.c_str());
 	logprintf("    %d objects saved", map->second->vectorObjects.size());
 	logprintf("    %d remove objects saved", map->second->vectorRemoveObjects.size());
 	logprintf("    %d vehicles saved", map->second->vectorVehicles.size());
@@ -984,6 +961,16 @@ int CConverter::GetMapIDFromName(std::string const &strMap)
 		return -1;
 
 	return it->second;
+}
+
+bool CConverter::IsValidMap(int mapID)
+{
+	return maps.find(mapID) != maps.end();
+}
+
+int CConverter::GetUpperID()
+{
+	return mapUpperID;
 }
 
 const char *CConverter::GetCommect(std::string const &szFromComment, ESavingFlags flags)

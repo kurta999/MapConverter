@@ -128,6 +128,16 @@ float CUtils::RadToDeg(float radians)
 	return retval;
 }
 
+// https://github.com/Pottus/ColAndreas/blob/28775f0f39a25a84349473b206118fa4b0fd944a/src/DynamicWorld.cpp#L63
+const double RADIAN_TO_DEG = 57.29577951;
+
+void CUtils::QuatToEuler(const quat_t& rotation, CVector& result)
+{
+	result.fY = (float)((-asin(2 * ((rotation.x * rotation.z) + (rotation.w * rotation.y))) * RADIAN_TO_DEG));
+	result.fX = (float)((atan2(2 * ((rotation.y * rotation.z) + (rotation.w * rotation.x)), (rotation.w * rotation.w) - (rotation.x * rotation.x) - (rotation.y * rotation.y) + (rotation.z * rotation.z)) * RADIAN_TO_DEG));
+	result.fZ = (float)((-atan2(2 * ((rotation.x * rotation.y) + (rotation.w * rotation.z)), (rotation.w * rotation.w) + (rotation.x * rotation.x) - (rotation.y * rotation.y) - (rotation.z * rotation.z)) * RADIAN_TO_DEG));
+}
+
 WORD CUtils::GetWeaponModel(int weaponid)
 {
 	if(weaponid < 0 || weaponid > 46) return 0;
@@ -266,7 +276,6 @@ bool IsNumeric(const std::string& input)
 
 bool fexists(const std::string& filename) 
 {
-	logprintf("fff: %s", filename.c_str());
 	std::ifstream ifile(filename.c_str());
 	bool ret = ifile.is_open();
 	if (ret)

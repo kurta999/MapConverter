@@ -1,0 +1,1 @@
+bash -c "cd /mnt/c/Users/Ati/Documents/GitHub/MapConverter; make MapConverter"

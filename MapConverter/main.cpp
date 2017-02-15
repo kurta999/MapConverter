@@ -15,10 +15,10 @@ cell AMX_NATIVE_CALL n_MC_LoadMap(AMX* amx, cell* params)
 	return ret;
 }
 
-// native MC_IsValidMap(mapid);
-cell AMX_NATIVE_CALL n_MC_IsValidMap(AMX* amx, cell* params)
+// native MC_LoadAllMap(callPawnFunctions);
+cell AMX_NATIVE_CALL n_MC_LoadAllMap(AMX* amx, cell* params)
 {
-	return CConverter::Get()->IsValidMTAMap(static_cast<int>(params[1]));
+	return CConverter::Get()->LoadAllMap(static_cast<int>(params[1]) != 0);
 }
 
 // native MC_UnloadMap(const mapname[]);
@@ -31,6 +31,18 @@ cell AMX_NATIVE_CALL n_MC_UnloadMap(AMX* amx, cell* params)
 cell AMX_NATIVE_CALL n_MC_SaveMap(AMX* amx, cell* params)
 {
 	return CConverter::Get()->SaveMTAMap(static_cast<int>(params[1]), static_cast<ESavingFlags>(params[2]));
+}
+
+// native MC_IsValidMap(mapid);
+cell AMX_NATIVE_CALL n_MC_IsValidMap(AMX* amx, cell* params)
+{
+	return CConverter::Get()->IsValidMap(static_cast<int>(params[1]));
+}
+
+// native MC_GetMapUpperID(mapid);
+cell AMX_NATIVE_CALL n_MC_GetMapUpperID(AMX* amx, cell* params)
+{
+	return CConverter::Get()->GetUpperID();
 }
 
 // native MC_GetMapName(mapid, name[], len = sizeof(name));
@@ -74,12 +86,15 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 
 AMX_NATIVE_INFO PluginNatives[] =
 {
-	{"MC_LoadMap",		n_MC_LoadMap },
-	{"MC_IsValidMap",	n_MC_IsValidMap },
-	{"MC_UnloadMap",	n_MC_UnloadMap },
-	{"MC_SaveMap",		n_MC_SaveMap },
-	{"MC_GetMapName",	n_MC_GetMapName },
-	{"MC_GetIDFromName",n_MC_GetIDFromName },
+	{ "MC_LoadMap",			n_MC_LoadMap },
+	{ "MC_LoadAllMap",		n_MC_LoadAllMap },
+	{ "MC_IsValidMap",		n_MC_IsValidMap },
+	{ "MC_UnloadMap",		n_MC_UnloadMap },
+	{ "MC_SaveMap",			n_MC_SaveMap },
+	{ "MC_IsValidMap",		n_MC_IsValidMap },
+	{ "MC_GetMapUpperID",	n_MC_GetMapUpperID },
+	{ "MC_GetMapName",		n_MC_GetMapName },
+	{ "MC_GetIDFromName",	n_MC_GetIDFromName },
 	{0, 0}
 };
  

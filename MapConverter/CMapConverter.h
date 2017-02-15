@@ -179,14 +179,16 @@ class CConverter : public CSingleton<CConverter>
 	friend class CSingleton<CConverter>;
 public:
 	CConverter();
-	~CConverter();
+	~CConverter() = default;
 	
 	int LoadMap(std::string const &strPath, bool callPawnFunctions);
-	bool IsValidMTAMap(int mapID);
+	int LoadAllMap(bool callPawnFunctions);
 	bool UnLoadMTAMap(int mapID, bool callPawnFunctions);
 	bool SaveMTAMap(int mapID, ESavingFlags flags);
 	std::string *GetMTAMapName(int mapID);
 	int GetMapIDFromName(std::string const &strMap);
+	bool IsValidMap(int mapID);
+	int GetUpperID();
 
 private:
 	int LoadMapMTA(std::string const &strPath, bool callPawnFunctions);

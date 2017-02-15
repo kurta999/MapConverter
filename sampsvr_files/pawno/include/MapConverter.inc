@@ -31,15 +31,17 @@ enum E_MarkerType
 };
 
 native MC_LoadMap(const mapname[], callPawnFunctions);
-native MC_IsValidMap(mapid);
+native MC_LoadAllMap(callPawnFunctions);
 native MC_UnloadMap(const mapname[]);
 native MC_SaveMap(mapid, E_SavingFlags:flags);
 native MC_GetMapName(mapid, name[], len = sizeof(name));
 native MC_GetIDFromName(const mapname[]);
+native MC_IsValidMap(mapid);
+native MC_GetMapUpperID();
 
 
-forward OnMapLoadingStart(mapid, mapname[], EMapType:maptype, callPawnFunctions);
-forward OnMapLoadingFinish(mapid, mapname[], EMapType:maptype, callPawnFunctions, objects, removeobjects, vehicles, markers, pickups, actors);
+forward OnMapLoadingStart(mapid, EMapType:maptype, callPawnFunctions);
+forward OnMapLoadingFinish(mapid, EMapType:maptype, callPawnFunctions, objects, removeobjects, vehicles, markers, pickups, actors);
 
 forward OnObjectDataLoaded(mapid, modelid, Float:fX, Float:fY, Float:fZ, Float:fRotX, Float:fRotY, Float:fRotZ, interior, virtualworld);
 forward OnObjectDataUnLoaded(mapid, extraid);
@@ -51,6 +53,6 @@ forward OnMarkerDataLoaded(mapid, E_MarkerType:type, Float:fX, Float:fY, Float:f
 forward OnMarkerDataUnLoaded(mapid, extraid);
 forward OnPickupDataLoaded(mapid, modelid, Float:fX, Float:fY, Float:fZ, virtualworld);
 forward OnPickupDataUnLoaded(mapid, extraid);
-forward OnActorDataLoaded(mapid, modelid, Float:fX, Float:fY, Float:fZ, Float:fAngle, interior, virtualworld);
+forward OnActorDataLoaded(mapid, modelid, Float:fX, Float:fY, Float:fZ, Float:fAngle, virtualworld);
 forward OnActorDataUnLoaded(mapid, extraid);
 

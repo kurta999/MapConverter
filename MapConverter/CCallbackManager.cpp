@@ -24,17 +24,13 @@ void CCallbackManager::OnMapLoadingStart(int mapid, CMap *pMap, bool callPawnFun
 		int iIndex;
 		if(!amx_FindPublic(i, "OnMapLoadingStart", &iIndex))
 		{
-			cell addr;
-
 			// Push the parameters
 			amx_Push(i, static_cast<cell>(callPawnFunctions));
 			amx_Push(i, static_cast<cell>(pMap->mapType));
-			amx_PushString(i, &addr, NULL, pMap->mapName.c_str(), NULL, NULL);
 			amx_Push(i, static_cast<cell>(mapid));
 
 			// Execute the callback
 			amx_Exec(i, NULL, iIndex);
-			amx_Release(i, addr);
 		}
 	}
 }
@@ -47,7 +43,6 @@ void CCallbackManager::OnMapLoadingFinish(int mapid, CMap *pMap, bool callPawnFu
 		int iIndex;
 		if(!amx_FindPublic(i, "OnMapLoadingFinish", &iIndex))
 		{
-			cell addr;
 
 			// Push the parameters
 			amx_Push(i, static_cast<cell>(actors));
@@ -58,12 +53,10 @@ void CCallbackManager::OnMapLoadingFinish(int mapid, CMap *pMap, bool callPawnFu
 			amx_Push(i, static_cast<cell>(objects));
 			amx_Push(i, static_cast<cell>(callPawnFunctions));
 			amx_Push(i, static_cast<cell>(pMap->mapType));
-			amx_PushString(i, &addr, NULL, pMap->mapName.c_str(), NULL, NULL);
 			amx_Push(i, static_cast<cell>(mapid));
 
 			// Execute the callback
 			amx_Exec(i, NULL, iIndex);
-			amx_Release(i, addr);
 		}
 	}
 }
@@ -316,7 +309,6 @@ int CCallbackManager::OnActorDataLoaded(int mapid, ped_t *ped)
 		{
 			// Push the parameters
 			amx_Push(i, static_cast<cell>(ped->iWorld));
-			amx_Push(i, static_cast<cell>(ped->byteInterior));
 			amx_Push(i, amx_ftoc(ped->fAngle));
 			amx_Push(i, amx_ftoc(ped->vecPos.fZ));
 			amx_Push(i, amx_ftoc(ped->vecPos.fY));
