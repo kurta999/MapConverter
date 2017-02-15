@@ -8,7 +8,7 @@
 
 enum E_SavingFlags
 {
-	ONLY_CREATE_VEHICLE = 1, // There will be no special data converted ex paintjob, interior and mods. Only CreateVehicle() line
+	ONLY_CREATE_VEHICLE = 1, // There will be no special data converted ex: paintjob, interior and mods. Only CreateVehicle() line
 	CONVERT_NUMBER_PLATE = 2, // Convert vehicle number plate?
 	HIDE_WHEN_ALPHA_NOT_255 = 4, // If you change the object alpha value different than 255, then hide object in samp? Its useful if you want to create invisible objects in samp
 	CONVERT_ELEMENT_NAME = 8 // Convert the name of the element which you give to the element in MTA, useful if you want to find specific model after conversion

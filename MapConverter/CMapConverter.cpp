@@ -4,9 +4,11 @@
 #include <iomanip>
 #include <cstring>
 #include <string.h> 
+#ifdef _WIN32
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
+#endif
 
 extern logprintf_t logprintf;
 extern CConverter *pConverter;
@@ -29,6 +31,7 @@ CConverter::CConverter()
 
 int CConverter::LoadAllMap(bool callPawnFunctions)
 {
+#ifdef _WIN32
 	for (auto p : fs::recursive_directory_iterator("scriptfiles/maps/MTA"))
 	{
 		if (p.path().extension().string() == ".map")
@@ -41,6 +44,9 @@ int CConverter::LoadAllMap(bool callPawnFunctions)
 		}
 	}
 	return 1;
+#else
+	return 0;
+#endif
 }
 
 int CConverter::LoadMap(std::string const &strName, bool callPawnFunctions)
@@ -645,8 +651,25 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 	char szHelp[32];
 	bool bVehicleUpgrades = false;
 	
-	sprintf(szLine, "#include <a_samp>\n#include <streamer>\n// Map Type: %s\n\npublic OnFilterScriptInit()\n{", map->second->mapType == MTA_DM ? "DM" : "Race");
+	sprintf(szLine, "#include <a_samp>\n#include <streamer>\n// Map Type: %s\n\n", map->second->mapType == MTA_DM ? "DM" : "Race");
 	fputs(szLine, pfOut);
+
+	/////////////////////////////////////////////////
+	// Write all remove objects into the file
+	if (!map->second->vectorRemoveObjects.empty())
+	{
+		fputs("public OnPlayerConnect(playerid)\n{\n", pfOut);
+		fputs("\t/*-------------------------------------------------- Remove Objects -------------------------------------------------*/\n", pfOut);
+		for (auto r : map->second->vectorRemoveObjects)
+		{
+			sprintf(szLine, "\tRemoveBuildingForPlayer(playerid, %d, %f, %f, %f, %f);\n", r->wModelID, r->vecPos.fX, r->vecPos.fY, r->vecPos.fZ, r->fRadius);
+			fputs(szLine, pfOut);
+
+		}
+		fputs("\treturn 1;\n}\n", pfOut);
+	}
+
+	fputs("\npublic OnFilterScriptInit()\n{", pfOut);
 	
 	// Add "tempvehid" variable is there are vehicles present
 	if (!map->second->vectorVehicles.empty())
@@ -655,7 +678,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		{
 			if (!(flags & ONLY_CREATE_VEHICLE) && (v->byteInterior || v->iWorld || v->ucPaintjob < 3 || v->iUpgrades[0]))
 			{
-				fputs("\n\tnew tempvehid; \n\n", pfOut);
+				fputs("\n\tnew tempvehid; \n", pfOut);
 				break;
 			}
 		}
@@ -711,18 +734,6 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 		}
 	}
 
-	/////////////////////////////////////////////////
-	// Write all remove objects into the file
-	if (!map->second->vectorRemoveObjects.empty())
-	{
-		fputs("\n\t/*-------------------------------------------------- Remove Objects -------------------------------------------------*/\n", pfOut);
-		for(auto r : map->second->vectorRemoveObjects)
-		{
-			sprintf(szLine, "\tRemoveBuildingForPlayer(playerid, %d, %f, %f, %f, %f);\n", r->wModelID, r->vecPos.fX, r->vecPos.fY, r->vecPos.fZ, r->fRadius);
-			fputs(szLine, pfOut);
-				
-		}
-	}
 	/////////////////////////////////////////////////
 	// Write all vehicles into the file
 	if (!map->second->vectorVehicles.empty())
@@ -847,22 +858,25 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 
 			if (m->type != marker_t::MarkerType::CORONA)
 			{
-				if (m->iWorld)
+				if (m->type != marker_t::MarkerType::ARROW)
 				{
-					sprintf(szHelp, ", %d", m->iWorld);
-					strcat(szLine, szHelp);
+					if (m->iWorld)
+					{
+						sprintf(szHelp, ", %d", m->iWorld);
+						strcat(szLine, szHelp);
+					}
+
+					if (m->byteInterior)
+					{
+						if (!m->iWorld)
+							strcat(szLine, ", -1");
+
+						sprintf(szHelp, ", %d", m->byteInterior);
+						strcat(szLine, szHelp);
+					}
+
+					strcat(szLine, ");");
 				}
-
-				if (m->byteInterior)
-				{
-					if (!m->iWorld)
-						strcat(szLine, ", -1");
-
-					sprintf(szHelp, ", %d", m->byteInterior);
-					strcat(szLine, szHelp);
-				}
-
-				strcat(szLine, ");");
 				strcat(szLine, GetCommect(m->strName, flags));
 				fputs(szLine, pfOut);
 			}

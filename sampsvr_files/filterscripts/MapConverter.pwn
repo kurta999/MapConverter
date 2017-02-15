@@ -5,33 +5,29 @@
 #include <streamer>
 #tryinclude <YSF>
 
-//#pragma warning disable 217
-
-stock AddVehicleComponentInline(vehicleid, ...)
-{
-	for (new i = 0, j = numargs(); i != j; ++i)
-		AddVehicleComponent(vehicleid, getarg(i));
-}
+// If you want to load all files from MTA dir on linux, then uncomment this
+//#define USE_YSF_FINDFILE
 
 public OnFilterScriptInit()
 {
-	/*
+#if defined USE_YSF_FINDFILE
 	new filename[255], i;
 	new ret;
-	while (ffind("maps/MTA/.*", filename, sizeof(filename), i))
+	while (ffind("maps/MTA/*.*", filename, sizeof(filename), i))
 	{
-	printf("%d - %s", i, filename);
-	ret = MC_LoadMap(filename, 0);
-	//MC_SaveMap(ret, CONVERT_ELEMENT_NAME);
+		printf("%d - %s", i, filename);
+		ret = MC_LoadMap(filename, 0);
+		MC_SaveMap(ret, CONVERT_ELEMENT_NAME);
 	}
-	*/
+#else
 	MC_LoadAllMap(1);
+
 	for (new i = 0; i != MC_GetMapUpperID(); i++)
 	{
 		if (!MC_IsValidMap(i)) continue;
 		MC_SaveMap(i, CONVERT_ELEMENT_NAME);
 	}
-
+#endif
 	//MC_SaveMap(MC_LoadMap("CSAW map1 iceworld", 0), CONVERT_ELEMENT_NAME);
 
 	return 1;
