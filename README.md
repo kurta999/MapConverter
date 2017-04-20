@@ -1,7 +1,7 @@
 MapConverter
 ============
 
-MTA -> SA-MP Map Converter/Loader
+A map converter plugin which purpose is converting maps from MTA to SAMP
 
 ![alt tag](https://travis-ci.org/kurta999/MapConverter.svg?branch=master)
 ![alt tag](https://ci.appveyor.com/api/projects/status/x4tpnnuc0e2b68fi?svg=true)
