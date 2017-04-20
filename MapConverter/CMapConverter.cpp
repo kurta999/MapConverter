@@ -4,11 +4,9 @@
 #include <iomanip>
 #include <cstring>
 #include <string.h> 
-#ifdef _WIN32
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
-#endif
 
 extern logprintf_t logprintf;
 extern CConverter *pConverter;
@@ -31,7 +29,6 @@ CConverter::CConverter()
 
 int CConverter::LoadAllMap(bool callPawnFunctions)
 {
-#ifdef _WIN32
 	for (auto p : fs::recursive_directory_iterator("scriptfiles/maps/MTA"))
 	{
 		if (p.path().extension().string() == ".map")
@@ -44,9 +41,6 @@ int CConverter::LoadAllMap(bool callPawnFunctions)
 		}
 	}
 	return 1;
-#else
-	return 0;
-#endif
 }
 
 int CConverter::LoadMap(std::string const &strName, bool callPawnFunctions)
@@ -703,7 +697,7 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 			sprintf(szLine, "%s%d, %f, %f, %f, %f, %f, %f", szLine, o->wModelID, o->vecPos.fX, o->vecPos.fY, o->vecPos.fZ,
 				o->vecRot.fX, o->vecRot.fY, o->vecRot.fZ);
 			
-			// Ha a virtual world, hozzáadjuk a kódhoz
+			// Ha a virtual world, hozzÃ¡adjuk a kÃ³dhoz
 			if(o->iWorld)
 			{
 				sprintf(szHelp, ", %d", o->iWorld);
@@ -712,10 +706,10 @@ bool CConverter::SaveMTAMap(int mapID, ESavingFlags flags)
 
 			if(o->byteInterior)
 			{
-				// Ha valamilyen interiorban van az object, de a 0-s virtálus világban - hozzáadjuk a 0s interiort a paraméter sorrend miatt
+				// Ha valamilyen interiorban van az object, de a 0-s virtÃ¡lus vilÃ¡gban - hozzÃ¡adjuk a 0s interiort a paramÃ©ter sorrend miatt
 				if(!o->iWorld)
 				{
-					strcat(szLine, ", -1"); // Streamer pluginban -1 = minden virtuális világban látható
+					strcat(szLine, ", -1"); // Streamer pluginban -1 = minden virtuÃ¡lis vilÃ¡gban lÃ¡thatÃ³
 				}
 				sprintf(szHelp, ", %d", o->byteInterior);
 				strcat(szLine, szHelp);
